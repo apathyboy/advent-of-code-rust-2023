@@ -4,7 +4,7 @@ fn calculate_calibration_value_pt1(input: &str) -> u32 {
     let mut nums: Vec<u32> = Vec::<u32>::new();
 
     for (_index, c) in input.chars().enumerate() {
-        if c.is_digit(10) {
+        if c.is_ascii_digit() {
             nums.push(c.to_digit(10).unwrap());
         }
     }
@@ -31,7 +31,7 @@ fn calculate_calibration_value_pt2(input: &str) -> u32 {
     ];
 
     for (_index, c) in input.chars().enumerate() {
-        if c.is_digit(10) {
+        if c.is_ascii_digit() {
             nums.push(c.to_digit(10).unwrap());
         } else {
             for (word, digit) in number_words.iter() {
