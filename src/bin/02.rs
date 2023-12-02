@@ -25,9 +25,8 @@ pub fn parse_line(line: &str) -> Option<Game> {
     let mut game = Game::new(0, 0, 0);
 
     for val in line.split(|c| [':', ';', ','].contains(&c)).skip(1) {
-        let mut parts = val.trim().splitn(2, ' ');
-        let value = parts.next().and_then(|n| n.parse::<u32>().ok()).unwrap();
-        let color = parts.next().unwrap();
+        let (value, color) = val.trim().split_once(' ').expect("Could not split on ' '");
+        let value = value.parse::<u32>().expect("Could not parse value");
 
         match color {
             "red" => game.red = std::cmp::max(value, game.red),
