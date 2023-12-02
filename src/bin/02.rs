@@ -1,46 +1,58 @@
-use regex::Regex;
-use std::collections::HashMap;
-
 advent_of_code::solution!(2);
 
-fn game_number(input: &str) -> Option<u32> {
-    let re = Regex::new(r"Game (\d+)").unwrap();
-    let caps = re.captures(input)?;
-    let game_number = caps.get(1)?.as_str().parse::<u32>().ok()?;
-    Some(game_number)
+#[derive(Debug, PartialEq)]
+pub struct Game {
+    red: u32,
+    green: u32,
+    blue: u32,
 }
 
-fn max_color_values(input: &str) -> (u32, u32, u32) {
-    let re = Regex::new(r"(\d+) (green|red|blue)").unwrap();
-    let mut max_values: HashMap<&str, u32> = HashMap::new();
+impl Game {
+    fn new(red: u32, green: u32, blue: u32) -> Self {
+        Self { red, green, blue }
+    }
 
-    for (_, [value, color]) in re.captures_iter(input).map(|c| c.extract()) {
-        let value = value.parse::<u32>().unwrap();
+    fn power(&self) -> Option<u32> {
+        Some(self.red * self.green * self.blue)
+    }
 
-        let entry = max_values.entry(color).or_insert(0);
-        if value > *entry {
-            *entry = value;
+    fn is_valid(&self) -> bool {
+        self.red <= 12 && self.green <= 13 && self.blue <= 14
+    }
+}
+
+pub fn parse_line(line: &str) -> Option<Game> {
+    let vals = line
+        .split(|c| [':', ';', ','].contains(&c))
+        .collect::<Vec<_>>();
+
+    let mut red = 0;
+    let mut green = 0;
+    let mut blue = 0;
+
+    for val in vals.iter().skip(1) {
+        let mut parts = val.trim().splitn(2, ' ');
+        let value = parts.next().and_then(|n| n.parse::<u32>().ok()).unwrap();
+        let color = parts.next();
+
+        match color {
+            Some("red") => red = std::cmp::max(value, red),
+            Some("green") => green = std::cmp::max(value, green),
+            Some("blue") => blue = std::cmp::max(value, blue),
+            _ => (),
         }
     }
 
-    let max_red = *max_values.get("red").unwrap();
-    let max_green = *max_values.get("green").unwrap();
-    let max_blue = *max_values.get("blue").unwrap();
-
-    (max_red, max_green, max_blue)
+    Some(Game::new(red, green, blue))
 }
 
 pub fn part_one(input: &str) -> Option<u32> {
     let sum_of_ids = input
         .lines()
-        .filter_map(|line| {
-            let game_number = game_number(line);
-            let (max_red, max_green, max_blue) = max_color_values(line);
-
-            match max_red <= 12 && max_green <= 13 && max_blue <= 14 {
-                true => game_number,
-                false => None,
-            }
+        .enumerate()
+        .filter_map(|(i, line)| match parse_line(line)?.is_valid() {
+            true => Some((i + 1) as u32),
+            false => None,
         })
         .sum();
 
@@ -48,16 +60,7 @@ pub fn part_one(input: &str) -> Option<u32> {
 }
 
 pub fn part_two(input: &str) -> Option<u32> {
-    let sum_of_powers = input
-        .lines()
-        .map(|line| {
-            let (max_red, max_green, max_blue) = max_color_values(line);
-
-            max_red * max_green * max_blue
-        })
-        .sum();
-
-    Some(sum_of_powers)
+    input.lines().map(|line| parse_line(line)?.power()).sum()
 }
 
 #[cfg(test)]
@@ -65,19 +68,10 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_game_number() {
+    fn test_parse_line() {
         let input = "Game 4: 1 green, 3 red, 6 blue; 3 green, 6 red; 3 green, 15 blue, 14 red";
-        let result = game_number(input);
-        assert_eq!(result, Some(4));
-    }
-
-    #[test]
-    fn test_max_values() {
-        let input = "Game 4: 1 green, 3 red, 6 blue; 3 green, 6 red; 3 green, 15 blue, 14 red";
-        let (red, green, blue) = max_color_values(input);
-        assert_eq!(red, 14);
-        assert_eq!(green, 3);
-        assert_eq!(blue, 15);
+        let result = parse_line(input);
+        assert_eq!(result, Some(Game::new(14, 3, 15)));
     }
 
     #[test]
