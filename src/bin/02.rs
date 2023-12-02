@@ -22,28 +22,22 @@ impl Game {
 }
 
 pub fn parse_line(line: &str) -> Option<Game> {
-    let vals = line
-        .split(|c| [':', ';', ','].contains(&c))
-        .collect::<Vec<_>>();
+    let mut game = Game::new(0, 0, 0);
 
-    let mut red = 0;
-    let mut green = 0;
-    let mut blue = 0;
-
-    for val in vals.iter().skip(1) {
+    for val in line.split(|c| [':', ';', ','].contains(&c)).skip(1) {
         let mut parts = val.trim().splitn(2, ' ');
         let value = parts.next().and_then(|n| n.parse::<u32>().ok()).unwrap();
-        let color = parts.next();
+        let color = parts.next().unwrap();
 
         match color {
-            Some("red") => red = std::cmp::max(value, red),
-            Some("green") => green = std::cmp::max(value, green),
-            Some("blue") => blue = std::cmp::max(value, blue),
+            "red" => game.red = std::cmp::max(value, game.red),
+            "green" => game.green = std::cmp::max(value, game.green),
+            "blue" => game.blue = std::cmp::max(value, game.blue),
             _ => (),
         }
     }
 
-    Some(Game::new(red, green, blue))
+    Some(game)
 }
 
 pub fn part_one(input: &str) -> Option<u32> {
@@ -69,8 +63,8 @@ mod tests {
 
     #[test]
     fn test_parse_line() {
-        let input = "Game 4: 1 green, 3 red, 6 blue; 3 green, 6 red; 3 green, 15 blue, 14 red";
-        let result = parse_line(input);
+        let result =
+            parse_line("Game 4: 1 green, 3 red, 6 blue; 3 green, 6 red; 3 green, 15 blue, 14 red");
         assert_eq!(result, Some(Game::new(14, 3, 15)));
     }
 
