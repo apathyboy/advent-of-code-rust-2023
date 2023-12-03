@@ -20,78 +20,74 @@ pub fn part_one(input: &str) -> Option<u32> {
                 }
 
                 // upper left
-                if i > 0 && j > 0 {
-                    if !map[i - 1].as_bytes()[j - 1].is_ascii_digit()
-                        && map[i - 1].as_bytes()[j - 1] as char != '.'
-                    {
-                        is_part_number = true;
-                    }
+                if i > 0
+                    && j > 0
+                    && !map[i - 1].as_bytes()[j - 1].is_ascii_digit()
+                    && map[i - 1].as_bytes()[j - 1] as char != '.'
+                {
+                    is_part_number = true;
                 }
 
                 // left
-                if i > 0 {
-                    if !map[i - 1].as_bytes()[j].is_ascii_digit()
-                        && map[i - 1].as_bytes()[j] as char != '.'
-                    {
-                        is_part_number = true;
-                    }
+                if i > 0
+                    && !map[i - 1].as_bytes()[j].is_ascii_digit()
+                    && map[i - 1].as_bytes()[j] as char != '.'
+                {
+                    is_part_number = true;
                 }
 
                 // lower left
-                if i > 0 && j < map.len() - 1 {
-                    if !map[i - 1].as_bytes()[j + 1].is_ascii_digit()
-                        && map[i - 1].as_bytes()[j + 1] as char != '.'
-                    {
-                        is_part_number = true;
-                    }
+                if i > 0
+                    && j < map.len() - 1
+                    && !map[i - 1].as_bytes()[j + 1].is_ascii_digit()
+                    && map[i - 1].as_bytes()[j + 1] as char != '.'
+                {
+                    is_part_number = true;
                 }
 
                 // upper
-                if j > 0 {
-                    if !map[i].as_bytes()[j - 1].is_ascii_digit()
-                        && map[i].as_bytes()[j - 1] as char != '.'
-                    {
-                        is_part_number = true;
-                    }
+                if j > 0
+                    && !map[i].as_bytes()[j - 1].is_ascii_digit()
+                    && map[i].as_bytes()[j - 1] as char != '.'
+                {
+                    is_part_number = true;
                 }
 
                 // lower
-                if j < map.len() - 1 {
-                    if !map[i].as_bytes()[j + 1].is_ascii_digit()
-                        && map[i].as_bytes()[j + 1] as char != '.'
-                    {
-                        is_part_number = true;
-                    }
+                if j < map.len() - 1
+                    && !map[i].as_bytes()[j + 1].is_ascii_digit()
+                    && map[i].as_bytes()[j + 1] as char != '.'
+                {
+                    is_part_number = true;
                 }
 
                 // upper right
-                if i < line.len() - 1 && j > 0 {
-                    if !map[i + 1].as_bytes()[j - 1].is_ascii_digit()
-                        && map[i + 1].as_bytes()[j - 1] as char != '.'
-                    {
-                        is_part_number = true;
-                    }
+                if i < line.len() - 1
+                    && j > 0
+                    && !map[i + 1].as_bytes()[j - 1].is_ascii_digit()
+                    && map[i + 1].as_bytes()[j - 1] as char != '.'
+                {
+                    is_part_number = true;
                 }
 
                 // right
-                if i < line.len() - 1 {
-                    if !map[i + 1].as_bytes()[j].is_ascii_digit()
-                        && map[i + 1].as_bytes()[j] as char != '.'
-                    {
-                        is_part_number = true;
-                    }
+                if i < line.len() - 1
+                    && !map[i + 1].as_bytes()[j].is_ascii_digit()
+                    && map[i + 1].as_bytes()[j] as char != '.'
+                {
+                    is_part_number = true;
                 }
 
                 // lower right
-                if i < line.len() - 1 && j < map.len() - 1 {
-                    if !map[i + 1].as_bytes()[j + 1].is_ascii_digit()
-                        && map[i + 1].as_bytes()[j + 1] as char != '.'
-                    {
-                        is_part_number = true;
-                    }
+                if i < line.len() - 1
+                    && j < map.len() - 1
+                    && !map[i + 1].as_bytes()[j + 1].is_ascii_digit()
+                    && map[i + 1].as_bytes()[j + 1] as char != '.'
+                {
+                    is_part_number = true;
                 }
             } else {
-                if is_part_number && potential_part_number.len() > 0 {
+                if is_part_number && !potential_part_number.is_empty() {
                     let num = potential_part_number.parse::<u32>().unwrap();
                     engine_schematic_total += num;
                 }
@@ -100,7 +96,7 @@ pub fn part_one(input: &str) -> Option<u32> {
             }
         }
 
-        if is_part_number && potential_part_number.len() > 0 {
+        if is_part_number && !potential_part_number.is_empty() {
             let num = potential_part_number.parse::<u32>().unwrap();
             engine_schematic_total += num;
         }
@@ -109,9 +105,9 @@ pub fn part_one(input: &str) -> Option<u32> {
     Some(engine_schematic_total)
 }
 
-pub fn part_two(input: &str) -> Option<u64> {
+pub fn part_two(input: &str) -> Option<u32> {
     let map: Vec<&str> = input.lines().collect::<Vec<&str>>();
-    let mut gears: HashMap<(usize, usize), Vec<u64>> = HashMap::new();
+    let mut gears: HashMap<(usize, usize), Vec<u32>> = HashMap::new();
 
     for (i, line) in map.iter().enumerate() {
         let mut potential_part_number: String = String::new();
@@ -122,65 +118,52 @@ pub fn part_two(input: &str) -> Option<u64> {
                 potential_part_number.push(c);
 
                 // upper left
-                if i > 0 && j > 0 {
-                    if map[i - 1].as_bytes()[j - 1] as char == '*' {
-                        found_gears.push((i - 1, j - 1));
-                    }
+                if i > 0 && j > 0 && map[i - 1].as_bytes()[j - 1] as char == '*' {
+                    found_gears.push((i - 1, j - 1));
                 }
 
                 // left
-                if i > 0 {
-                    if map[i - 1].as_bytes()[j] as char == '*' {
-                        found_gears.push((i - 1, j));
-                    }
+                if i > 0 && map[i - 1].as_bytes()[j] as char == '*' {
+                    found_gears.push((i - 1, j));
                 }
 
                 // lower left
-                if i > 0 && j < map.len() - 1 {
-                    if map[i - 1].as_bytes()[j + 1] as char == '*' {
-                        found_gears.push((i - 1, j + 1));
-                    }
+                if i > 0 && j < map.len() - 1 && map[i - 1].as_bytes()[j + 1] as char == '*' {
+                    found_gears.push((i - 1, j + 1));
                 }
 
                 // upper
-                if j > 0 {
-                    if map[i].as_bytes()[j - 1] as char == '*' {
-                        found_gears.push((i, j - 1));
-                    }
+                if j > 0 && map[i].as_bytes()[j - 1] as char == '*' {
+                    found_gears.push((i, j - 1));
                 }
 
                 // lower
-                if j < map.len() - 1 {
-                    if map[i].as_bytes()[j + 1] as char == '*' {
-                        found_gears.push((i, j + 1));
-                    }
+                if j < map.len() - 1 && map[i].as_bytes()[j + 1] as char == '*' {
+                    found_gears.push((i, j + 1));
                 }
 
                 // upper right
-                if i < line.len() - 1 && j > 0 {
-                    if map[i + 1].as_bytes()[j - 1] as char == '*' {
-                        found_gears.push((i + 1, j - 1));
-                    }
+                if i < line.len() - 1 && j > 0 && map[i + 1].as_bytes()[j - 1] as char == '*' {
+                    found_gears.push((i + 1, j - 1));
                 }
 
                 // right
-                if i < line.len() - 1 {
-                    if map[i + 1].as_bytes()[j] as char == '*' {
-                        found_gears.push((i + 1, j));
-                    }
+                if i < line.len() - 1 && map[i + 1].as_bytes()[j] as char == '*' {
+                    found_gears.push((i + 1, j));
                 }
 
                 // lower right
-                if i < line.len() - 1 && j < map.len() - 1 {
-                    if map[i + 1].as_bytes()[j + 1] as char == '*' {
-                        found_gears.push((i + 1, j + 1));
-                    }
+                if i < line.len() - 1
+                    && j < map.len() - 1
+                    && map[i + 1].as_bytes()[j + 1] as char == '*'
+                {
+                    found_gears.push((i + 1, j + 1));
                 }
             } else {
-                if found_gears.len() > 0 && potential_part_number.len() > 0 {
-                    let num = potential_part_number.parse::<u64>().unwrap();
+                if !found_gears.is_empty() && !potential_part_number.is_empty() {
+                    let num = potential_part_number.parse::<u32>().unwrap();
                     for gear in found_gears.iter().unique() {
-                        gears.entry(*gear).or_insert(Vec::new()).push(num);
+                        gears.entry(*gear).or_default().push(num);
                     }
                 }
                 potential_part_number = String::new();
@@ -188,10 +171,10 @@ pub fn part_two(input: &str) -> Option<u64> {
             }
         }
 
-        if found_gears.len() > 0 && potential_part_number.len() > 0 {
-            let num = potential_part_number.parse::<u64>().unwrap();
+        if !found_gears.is_empty() && !potential_part_number.is_empty() {
+            let num = potential_part_number.parse::<u32>().unwrap();
             for gear in found_gears.iter().unique() {
-                gears.entry(*gear).or_insert(Vec::new()).push(num);
+                gears.entry(*gear).or_default().push(num);
             }
         }
     }
