@@ -42,10 +42,11 @@ pub fn parse_line(line: &str) -> Option<Game> {
 pub fn part_one(input: &str) -> Option<u32> {
     let sum_of_ids = input
         .lines()
+        .filter_map(parse_line)
         .enumerate()
-        .filter_map(|(i, line)| match parse_line(line)?.is_valid() {
-            true => Some((i + 1) as u32),
-            false => None,
+        .map(|(i, game)| match game.is_valid() {
+            true => (i + 1) as u32,
+            false => 0,
         })
         .sum();
 
@@ -53,7 +54,11 @@ pub fn part_one(input: &str) -> Option<u32> {
 }
 
 pub fn part_two(input: &str) -> Option<u32> {
-    input.lines().map(|line| parse_line(line)?.power()).sum()
+    input
+        .lines()
+        .filter_map(parse_line)
+        .map(|g| g.power())
+        .sum()
 }
 
 #[cfg(test)]
