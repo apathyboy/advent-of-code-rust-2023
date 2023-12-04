@@ -27,15 +27,17 @@ impl Card {
     }
 }
 
+fn parse_string_of_u32(s: &str) -> Vec<u32> {
+    s.split_whitespace()
+        .filter_map(|word| word.parse::<u32>().ok())
+        .collect()
+}
+
 fn parse_line(line: &str) -> Option<Card> {
     let parts = line
         .split(|c| [':', '|'].contains(&c))
         .skip(1)
-        .map(|s| {
-            s.split_whitespace()
-                .map(|s| s.parse::<u32>().unwrap())
-                .collect::<Vec<u32>>()
-        })
+        .map(parse_string_of_u32)
         .collect::<Vec<Vec<u32>>>();
 
     Some(Card::new(parts[0].clone(), parts[1].clone()))
@@ -44,7 +46,8 @@ fn parse_line(line: &str) -> Option<Card> {
 pub fn part_one(input: &str) -> Option<u32> {
     let winnings = input
         .lines()
-        .map(|line| parse_line(line).unwrap().score())
+        .filter_map(|line| parse_line(line))
+        .map(|card| card.score())
         .sum();
 
     Some(winnings)
@@ -53,14 +56,14 @@ pub fn part_one(input: &str) -> Option<u32> {
 pub fn part_two(input: &str) -> Option<u32> {
     let cards: Vec<Card> = input
         .lines()
-        .map(|line| parse_line(line).unwrap())
+        .filter_map(|line| parse_line(line))
         .collect::<Vec<Card>>();
 
     let mut copies = vec![1; cards.len()];
 
     for (i, card) in cards.iter().enumerate() {
-        for j in 0..card.won() {
-            copies[i + j + 1] += copies[i];
+        for j in 1..=card.won() {
+            copies[i + j] += copies[i];
         }
     }
 
