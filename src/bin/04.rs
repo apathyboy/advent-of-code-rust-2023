@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 advent_of_code::solution!(4);
 
 #[derive(Debug)]
@@ -43,17 +41,6 @@ fn parse_line(line: &str) -> Option<Card> {
     Some(Card::new(parts[0].clone(), parts[1].clone()))
 }
 
-fn collect_cards(map: &mut HashMap<usize, u32>, cards: &Vec<Card>, card_id: usize) {
-    let card = cards.get(card_id - 1).unwrap();
-    let wins = card.won();
-
-    *map.entry(card_id).or_default() += 1;
-
-    for i in 1..=wins {
-        collect_cards(map, cards, i + card_id);
-    }
-}
-
 pub fn part_one(input: &str) -> Option<u32> {
     let winnings = input
         .lines()
@@ -64,17 +51,20 @@ pub fn part_one(input: &str) -> Option<u32> {
 }
 
 pub fn part_two(input: &str) -> Option<u32> {
-    let mut card_counts: HashMap<usize, u32> = HashMap::new();
     let cards: Vec<Card> = input
         .lines()
         .map(|line| parse_line(line).unwrap())
         .collect::<Vec<Card>>();
 
-    for (i, _) in cards.iter().enumerate() {
-        collect_cards(&mut card_counts, &cards, i + 1);
+    let mut copies = vec![1; cards.len()];
+
+    for (i, card) in cards.iter().enumerate() {
+        for j in 0..card.won() {
+            copies[i + j + 1] += copies[i];
+        }
     }
 
-    Some(card_counts.values().sum())
+    Some(copies.iter().sum())
 }
 
 #[cfg(test)]
