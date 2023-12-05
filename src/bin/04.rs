@@ -1,16 +1,10 @@
 advent_of_code::solution!(4);
 
-fn parse_string_of_u32(s: &str) -> Vec<u32> {
-    s.split_whitespace()
-        .filter_map(|word| word.parse::<u32>().ok())
-        .collect()
-}
-
 fn parse_line(line: &str) -> Option<usize> {
     let parts: Vec<Vec<u32>> = line
         .split(|c| [':', '|'].contains(&c))
         .skip(1)
-        .map(parse_string_of_u32)
+        .map(advent_of_code::parse_space_separated::<u32>)
         .collect();
 
     Some(parts[0].iter().filter(|&x| parts[1].contains(x)).count())
