@@ -16,14 +16,16 @@ fn check_for_symbol(map: &Vec<&str>, i: i32, j: i32) -> bool {
     ];
 
     for (x, y) in positions.iter() {
-        let (x, y) = (j as i32 + x, i as i32 + y);
+        let (x, y) = (j + x, i + y);
 
-        if x >= 0 && y >= 0 && x < (map.len() - 1) as i32 && y < (map.len() - 1) as i32 {
-            if !map[y as usize].as_bytes()[x as usize].is_ascii_digit()
-                && map[y as usize].as_bytes()[x as usize] as char != '.'
-            {
-                return true;
-            }
+        if x >= 0
+            && y >= 0
+            && x < (map.len() - 1) as i32
+            && y < (map.len() - 1) as i32
+            && !map[y as usize].as_bytes()[x as usize].is_ascii_digit()
+            && map[y as usize].as_bytes()[x as usize] as char != '.'
+        {
+            return true;
         }
     }
 
@@ -43,12 +45,15 @@ fn find_gears(map: &Vec<&str>, i: i32, j: i32, found_gears: &mut Vec<(usize, usi
     ];
 
     for (x, y) in positions.iter() {
-        let (x, y) = (j as i32 + x, i as i32 + y);
+        let (x, y) = (j + x, i + y);
 
-        if x >= 0 && y >= 0 && x < (map.len() - 1) as i32 && y < (map.len() - 1) as i32 {
-            if map[y as usize].as_bytes()[x as usize] as char == '*' {
-                found_gears.push((y as usize, x as usize));
-            }
+        if x >= 0
+            && y >= 0
+            && x < (map.len() - 1) as i32
+            && y < (map.len() - 1) as i32
+            && map[y as usize].as_bytes()[x as usize] as char == '*'
+        {
+            found_gears.push((y as usize, x as usize));
         }
     }
 }
