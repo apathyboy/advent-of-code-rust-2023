@@ -54,9 +54,8 @@ fn find_gears(map: &Vec<&str>, i: i32, j: i32, found_gears: &mut Vec<(usize, usi
 }
 
 fn part_one(input: &str) -> Option<u32> {
-    let mut engine_schematic_total: u32 = 0;
     let map: Vec<&str> = input.lines().collect::<Vec<&str>>();
-
+    let mut engine_schematic_total: u32 = 0;
     let mut potential_part_number: String = String::new();
     let mut is_part_number = false;
 
