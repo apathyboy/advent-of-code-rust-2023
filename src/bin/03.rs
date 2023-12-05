@@ -3,9 +3,7 @@ use std::collections::HashMap;
 
 advent_of_code::solution!(3);
 
-fn part_one(input: &str) -> Option<u32> {
-    let mut engine_schematic_total: u32 = 0;
-    let map: Vec<&str> = input.lines().collect::<Vec<&str>>();
+fn check_for_symbol(map: &Vec<&str>, i: i32, j: i32) -> bool {
     let positions = [
         (1, 0),
         (1, 1),
@@ -17,29 +15,58 @@ fn part_one(input: &str) -> Option<u32> {
         (1, -1),
     ];
 
-    for (i, line) in map.iter().enumerate() {
-        let mut potential_part_number: String = String::new();
-        let mut is_part_number = false;
+    for (x, y) in positions.iter() {
+        let (x, y) = (j as i32 + x, i as i32 + y);
 
+        if x >= 0 && y >= 0 && x < (map.len() - 1) as i32 && y < (map.len() - 1) as i32 {
+            if !map[y as usize].as_bytes()[x as usize].is_ascii_digit()
+                && map[y as usize].as_bytes()[x as usize] as char != '.'
+            {
+                return true;
+            }
+        }
+    }
+
+    false
+}
+
+fn find_gears(map: &Vec<&str>, i: i32, j: i32, found_gears: &mut Vec<(usize, usize)>) {
+    let positions = [
+        (1, 0),
+        (1, 1),
+        (0, 1),
+        (-1, 1),
+        (-1, 0),
+        (-1, -1),
+        (0, -1),
+        (1, -1),
+    ];
+
+    for (x, y) in positions.iter() {
+        let (x, y) = (j as i32 + x, i as i32 + y);
+
+        if x >= 0 && y >= 0 && x < (map.len() - 1) as i32 && y < (map.len() - 1) as i32 {
+            if map[y as usize].as_bytes()[x as usize] as char == '*' {
+                found_gears.push((y as usize, x as usize));
+            }
+        }
+    }
+}
+
+fn part_one(input: &str) -> Option<u32> {
+    let mut engine_schematic_total: u32 = 0;
+    let map: Vec<&str> = input.lines().collect::<Vec<&str>>();
+
+    let mut potential_part_number: String = String::new();
+    let mut is_part_number = false;
+
+    for (i, line) in map.iter().enumerate() {
         for (j, c) in line.chars().enumerate() {
             if c.is_ascii_digit() {
                 potential_part_number.push(c);
 
-                if is_part_number {
-                    continue;
-                }
-
-                for (x, y) in positions.iter() {
-                    let (x, y) = (j as i32 + x, i as i32 + y);
-                    if x >= 0 && y >= 0 && x < (map.len() - 1) as i32 && y < (line.len() - 1) as i32
-                    {
-                        if !map[y as usize].as_bytes()[x as usize].is_ascii_digit()
-                            && map[y as usize].as_bytes()[x as usize] as char != '.'
-                        {
-                            is_part_number = true;
-                            break;
-                        }
-                    }
+                if !is_part_number {
+                    is_part_number = check_for_symbol(&map, i as i32, j as i32);
                 }
             }
             if !c.is_ascii_digit() || j == line.len() - 1 {
@@ -59,34 +86,15 @@ fn part_one(input: &str) -> Option<u32> {
 pub fn part_two(input: &str) -> Option<u32> {
     let map: Vec<&str> = input.lines().collect::<Vec<&str>>();
     let mut gears: HashMap<(usize, usize), Vec<u32>> = HashMap::new();
-    let positions = [
-        (1, 0),
-        (1, 1),
-        (0, 1),
-        (-1, 1),
-        (-1, 0),
-        (-1, -1),
-        (0, -1),
-        (1, -1),
-    ];
+    let mut potential_part_number: String = String::new();
+    let mut found_gears: Vec<(usize, usize)> = Vec::new();
 
     for (i, line) in map.iter().enumerate() {
-        let mut potential_part_number: String = String::new();
-        let mut found_gears: Vec<(usize, usize)> = Vec::new();
-
         for (j, c) in line.chars().enumerate() {
             if c.is_ascii_digit() {
                 potential_part_number.push(c);
 
-                for (x, y) in positions.iter() {
-                    let (x, y) = (j as i32 + x, i as i32 + y);
-                    if x >= 0 && y >= 0 && x < (map.len() - 1) as i32 && y < (line.len() - 1) as i32
-                    {
-                        if map[y as usize].as_bytes()[x as usize] as char == '*' {
-                            found_gears.push((y as usize, x as usize));
-                        }
-                    }
-                }
+                find_gears(&map, i as i32, j as i32, &mut found_gears);
             }
 
             if !c.is_ascii_digit() || j == line.len() - 1 {
