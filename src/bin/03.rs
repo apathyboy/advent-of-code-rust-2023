@@ -3,9 +3,19 @@ use std::collections::HashMap;
 
 advent_of_code::solution!(3);
 
-pub fn part_one(input: &str) -> Option<u32> {
+fn part_one(input: &str) -> Option<u32> {
     let mut engine_schematic_total: u32 = 0;
     let map: Vec<&str> = input.lines().collect::<Vec<&str>>();
+    let positions = [
+        (1, 0),
+        (1, 1),
+        (0, 1),
+        (-1, 1),
+        (-1, 0),
+        (-1, -1),
+        (0, -1),
+        (1, -1),
+    ];
 
     for (i, line) in map.iter().enumerate() {
         let mut potential_part_number: String = String::new();
@@ -19,86 +29,27 @@ pub fn part_one(input: &str) -> Option<u32> {
                     continue;
                 }
 
-                // upper left
-                if i > 0
-                    && j > 0
-                    && !map[i - 1].as_bytes()[j - 1].is_ascii_digit()
-                    && map[i - 1].as_bytes()[j - 1] as char != '.'
-                {
-                    is_part_number = true;
+                for (x, y) in positions.iter() {
+                    let (x, y) = (j as i32 + x, i as i32 + y);
+                    if x >= 0 && y >= 0 && x < (map.len() - 1) as i32 && y < (line.len() - 1) as i32
+                    {
+                        if !map[y as usize].as_bytes()[x as usize].is_ascii_digit()
+                            && map[y as usize].as_bytes()[x as usize] as char != '.'
+                        {
+                            is_part_number = true;
+                            break;
+                        }
+                    }
                 }
-
-                // left
-                if i > 0
-                    && !map[i - 1].as_bytes()[j].is_ascii_digit()
-                    && map[i - 1].as_bytes()[j] as char != '.'
-                {
-                    is_part_number = true;
-                }
-
-                // lower left
-                if i > 0
-                    && j < map.len() - 1
-                    && !map[i - 1].as_bytes()[j + 1].is_ascii_digit()
-                    && map[i - 1].as_bytes()[j + 1] as char != '.'
-                {
-                    is_part_number = true;
-                }
-
-                // upper
-                if j > 0
-                    && !map[i].as_bytes()[j - 1].is_ascii_digit()
-                    && map[i].as_bytes()[j - 1] as char != '.'
-                {
-                    is_part_number = true;
-                }
-
-                // lower
-                if j < map.len() - 1
-                    && !map[i].as_bytes()[j + 1].is_ascii_digit()
-                    && map[i].as_bytes()[j + 1] as char != '.'
-                {
-                    is_part_number = true;
-                }
-
-                // upper right
-                if i < line.len() - 1
-                    && j > 0
-                    && !map[i + 1].as_bytes()[j - 1].is_ascii_digit()
-                    && map[i + 1].as_bytes()[j - 1] as char != '.'
-                {
-                    is_part_number = true;
-                }
-
-                // right
-                if i < line.len() - 1
-                    && !map[i + 1].as_bytes()[j].is_ascii_digit()
-                    && map[i + 1].as_bytes()[j] as char != '.'
-                {
-                    is_part_number = true;
-                }
-
-                // lower right
-                if i < line.len() - 1
-                    && j < map.len() - 1
-                    && !map[i + 1].as_bytes()[j + 1].is_ascii_digit()
-                    && map[i + 1].as_bytes()[j + 1] as char != '.'
-                {
-                    is_part_number = true;
-                }
-            } else {
+            }
+            if !c.is_ascii_digit() || j == line.len() - 1 {
                 if is_part_number && !potential_part_number.is_empty() {
-                    let num = potential_part_number.parse::<u32>().unwrap();
-                    engine_schematic_total += num;
+                    engine_schematic_total += potential_part_number.parse::<u32>().unwrap();
                 }
-                potential_part_number = String::new();
+
+                potential_part_number.clear();
                 is_part_number = false;
             }
-        }
-
-        if is_part_number && !potential_part_number.is_empty() {
-            let num = potential_part_number.parse::<u32>().unwrap();
-            engine_schematic_total += num;
         }
     }
 
@@ -108,6 +59,16 @@ pub fn part_one(input: &str) -> Option<u32> {
 pub fn part_two(input: &str) -> Option<u32> {
     let map: Vec<&str> = input.lines().collect::<Vec<&str>>();
     let mut gears: HashMap<(usize, usize), Vec<u32>> = HashMap::new();
+    let positions = [
+        (1, 0),
+        (1, 1),
+        (0, 1),
+        (-1, 1),
+        (-1, 0),
+        (-1, -1),
+        (0, -1),
+        (1, -1),
+    ];
 
     for (i, line) in map.iter().enumerate() {
         let mut potential_part_number: String = String::new();
@@ -117,64 +78,27 @@ pub fn part_two(input: &str) -> Option<u32> {
             if c.is_ascii_digit() {
                 potential_part_number.push(c);
 
-                // upper left
-                if i > 0 && j > 0 && map[i - 1].as_bytes()[j - 1] as char == '*' {
-                    found_gears.push((i - 1, j - 1));
+                for (x, y) in positions.iter() {
+                    let (x, y) = (j as i32 + x, i as i32 + y);
+                    if x >= 0 && y >= 0 && x < (map.len() - 1) as i32 && y < (line.len() - 1) as i32
+                    {
+                        if map[y as usize].as_bytes()[x as usize] as char == '*' {
+                            found_gears.push((y as usize, x as usize));
+                        }
+                    }
                 }
+            }
 
-                // left
-                if i > 0 && map[i - 1].as_bytes()[j] as char == '*' {
-                    found_gears.push((i - 1, j));
-                }
-
-                // lower left
-                if i > 0 && j < map.len() - 1 && map[i - 1].as_bytes()[j + 1] as char == '*' {
-                    found_gears.push((i - 1, j + 1));
-                }
-
-                // upper
-                if j > 0 && map[i].as_bytes()[j - 1] as char == '*' {
-                    found_gears.push((i, j - 1));
-                }
-
-                // lower
-                if j < map.len() - 1 && map[i].as_bytes()[j + 1] as char == '*' {
-                    found_gears.push((i, j + 1));
-                }
-
-                // upper right
-                if i < line.len() - 1 && j > 0 && map[i + 1].as_bytes()[j - 1] as char == '*' {
-                    found_gears.push((i + 1, j - 1));
-                }
-
-                // right
-                if i < line.len() - 1 && map[i + 1].as_bytes()[j] as char == '*' {
-                    found_gears.push((i + 1, j));
-                }
-
-                // lower right
-                if i < line.len() - 1
-                    && j < map.len() - 1
-                    && map[i + 1].as_bytes()[j + 1] as char == '*'
-                {
-                    found_gears.push((i + 1, j + 1));
-                }
-            } else {
+            if !c.is_ascii_digit() || j == line.len() - 1 {
                 if !found_gears.is_empty() && !potential_part_number.is_empty() {
                     let num = potential_part_number.parse::<u32>().unwrap();
                     for gear in found_gears.iter().unique() {
                         gears.entry(*gear).or_default().push(num);
                     }
                 }
-                potential_part_number = String::new();
-                found_gears = Vec::new();
-            }
-        }
 
-        if !found_gears.is_empty() && !potential_part_number.is_empty() {
-            let num = potential_part_number.parse::<u32>().unwrap();
-            for gear in found_gears.iter().unique() {
-                gears.entry(*gear).or_default().push(num);
+                potential_part_number.clear();
+                found_gears.clear();
             }
         }
     }
