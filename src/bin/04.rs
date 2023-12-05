@@ -4,7 +4,7 @@ fn parse_line(line: &str) -> Option<usize> {
     let parts: Vec<Vec<u32>> = line
         .split(|c| [':', '|'].contains(&c))
         .skip(1)
-        .map(advent_of_code::parse_space_separated::<u32>)
+        .map(advent_of_code::parse_space_separated)
         .collect();
 
     Some(parts[0].iter().filter(|&x| parts[1].contains(x)).count())
