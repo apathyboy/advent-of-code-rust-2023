@@ -95,7 +95,6 @@ fn ranged_explore(
                     IntersectionExt::Within | IntersectionExt::Same => {
                         next_ranges.push_back(seeds.start + map.diff..seeds.end + map.diff);
                         seeds = 0..0;
-                        //continue 'seeds;
                     }
                     IntersectionExt::Over => {
                         next_ranges.push_back(
@@ -104,7 +103,6 @@ fn ranged_explore(
                         ranges.push_front(seeds.start..map.source_range.start);
                         ranges.push_front(map.source_range.end..seeds.end);
                         seeds = 0..0;
-                        //continue 'seeds;
                     }
                     _ => {}
                 };
