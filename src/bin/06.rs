@@ -6,20 +6,33 @@ struct Race {
     distance: u64,
 }
 
+fn calculate_distance(time: u64, race_time: u64) -> u64 {
+    (race_time - time) * time
+}
+
+fn find_partition_point(start: u64, end: u64, race: &Race) -> u64 {
+    let mut left = start;
+    let mut right = end;
+
+    while left < right {
+        let mid = left + (right - left) / 2;
+        if calculate_distance(mid, race.time) > race.distance {
+            right = mid;
+        } else {
+            left = mid + 1;
+        }
+    }
+
+    left
+}
+
 fn count_potential_wins(race: &Race) -> u64 {
     let half_time = race.time / 2;
-    let add_on_time = if race.time % 2 == 0 { 1 } else { 0 };
+    let offset = if race.time % 2 == 0 { 1 } else { 0 };
 
-    (0..=half_time)
-        .rev()
-        .map(|t| {
-            let remaining = race.time - t;
-            remaining * t
-        })
-        .take_while(|d| *d > race.distance)
-        .count() as u64
-        * 2
-        - add_on_time
+    let partition_point = find_partition_point(0, half_time + 1, race);
+
+    ((half_time + 1) - partition_point) * 2 - offset
 }
 
 fn parse_races(input: &str) -> Vec<Race> {
@@ -87,12 +100,21 @@ mod tests {
 
     #[test]
     fn test_count_potential_wins() {
-        let race = Race {
+        let race1 = count_potential_wins(&Race {
             time: 7,
             distance: 9,
-        };
-        let result = count_potential_wins(&race);
-        assert_eq!(result, 4);
+        });
+        let race2 = count_potential_wins(&Race {
+            time: 15,
+            distance: 40,
+        });
+        let race3 = count_potential_wins(&Race {
+            time: 30,
+            distance: 200,
+        });
+        assert_eq!(race1, 4);
+        assert_eq!(race2, 8);
+        assert_eq!(race3, 9);
     }
 
     #[test]
