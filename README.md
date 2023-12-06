@@ -29,3 +29,4 @@ Solutions for [Advent of Code](https://adventofcode.com/) in [Rust](https://www.
 
 **Total: 1.36ms**
 <!--- benchmarking table --->
+*Benchmarks performed on a 2021 M1 Macbook Pro, 16GB*
