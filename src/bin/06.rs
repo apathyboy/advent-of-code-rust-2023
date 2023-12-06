@@ -7,13 +7,19 @@ struct Race {
 }
 
 fn count_potential_wins(race: &Race) -> u64 {
-    (0..=race.time)
+    let half_time = race.time / 2;
+    let add_on_time = if race.time % 2 == 0 { 1 } else { 0 };
+
+    (0..=half_time)
+        .rev()
         .map(|t| {
             let remaining = race.time - t;
             remaining * t
         })
-        .filter(|d| *d > race.distance)
+        .take_while(|d| *d > race.distance)
         .count() as u64
+        * 2
+        - add_on_time
 }
 
 fn parse_races(input: &str) -> Vec<Race> {
