@@ -57,24 +57,20 @@ fn parse_seed_ranges(input: &str) -> Vec<Range<i64>> {
         .collect()
 }
 
-fn process_seed_to_location(seed: i64, almanac_maps: &Vec<Vec<AlmanacMap>>) -> i64 {
+fn process_seed_to_location(seed: i64, almanac_maps: &[Vec<AlmanacMap>]) -> i64 {
     almanac_maps.iter().fold(seed, |seed_test, almanac_map| {
-        match almanac_map
+        if let Some(map) = almanac_map
             .iter()
             .find(|map| map.source_range.contains(&seed_test))
         {
-            Some(map) => return seed_test + map.diff,
-            None => (),
+            return seed_test + map.diff;
         }
 
         seed_test
     })
 }
 
-fn ranged_explore(
-    seed_ranges: &Vec<Range<i64>>,
-    almanac_maps: &Vec<Vec<AlmanacMap>>,
-) -> Option<i64> {
+fn ranged_explore(seed_ranges: &[Range<i64>], almanac_maps: &[Vec<AlmanacMap>]) -> Option<i64> {
     let mut ranges: VecDeque<Range<i64>> = seed_ranges.iter().cloned().collect();
     let mut next_ranges: VecDeque<Range<i64>> = VecDeque::new();
 
