@@ -1,20 +1,22 @@
 use itertools::Itertools;
-
+use range_ext::intersect::*;
+use std::{collections::VecDeque, ops::Range};
 advent_of_code::solution!(5);
 
 #[derive(Debug)]
 struct AlmanacMap {
-    dest_range_start: u64,
-    source_range_start: u64,
-    range_length: u64,
+    source_range: Range<i64>,
+    diff: i64,
 }
 
 impl AlmanacMap {
-    fn new(dest_range_start: u64, source_range_start: u64, range_length: u64) -> Self {
+    fn new(dest_range_start: i64, source_range_start: i64, range_length: i64) -> Self {
         Self {
-            dest_range_start,
-            source_range_start,
-            range_length,
+            source_range: Range {
+                start: source_range_start,
+                end: source_range_start + range_length,
+            },
+            diff: dest_range_start - source_range_start,
         }
     }
 }
@@ -28,7 +30,7 @@ fn parse_almanac_maps(input: &str) -> Vec<Vec<AlmanacMap>> {
             almanac_maps.push(current_maps);
             current_maps = Vec::new();
         } else if !line.ends_with("map:") {
-            let parts: Vec<u64> = advent_of_code::parse_space_separated(line);
+            let parts: Vec<i64> = advent_of_code::parse_space_separated(line);
             current_maps.push(AlmanacMap::new(parts[0], parts[1], parts[2]));
         }
     }
@@ -38,58 +40,93 @@ fn parse_almanac_maps(input: &str) -> Vec<Vec<AlmanacMap>> {
     almanac_maps
 }
 
-fn parse_seeds(input: &str) -> Vec<u64> {
-    advent_of_code::parse_space_separated::<u64>(&input[6..])
+fn parse_seeds(input: &str) -> Vec<i64> {
+    advent_of_code::parse_space_separated(&input[6..])
 }
 
-fn parse_seed_ranges(input: &str) -> Vec<(u64, u64)> {
-    let seed_ranges = advent_of_code::parse_space_separated::<u64>(&input[6..]);
+fn parse_seed_ranges(input: &str) -> Vec<Range<i64>> {
+    let seed_ranges = advent_of_code::parse_space_separated::<i64>(&input[6..]);
 
     seed_ranges
         .chunks(2)
-        .map(|chunk| (chunk[0], chunk[1]))
-        .sorted_by(|a, b| a.0.cmp(&b.0))
+        .map(|chunk| Range {
+            start: chunk[0],
+            end: chunk[0] + chunk[1],
+        })
+        .sorted_by(|a, b| a.start.cmp(&b.start))
         .collect()
 }
 
-fn process_seed_to_location(seed: u64, almanac_maps: &Vec<Vec<AlmanacMap>>) -> u64 {
+fn process_seed_to_location(seed: i64, almanac_maps: &Vec<Vec<AlmanacMap>>) -> i64 {
     almanac_maps.iter().fold(seed, |seed_test, almanac_map| {
-        for map in almanac_map {
-            if seed_test >= map.source_range_start
-                && seed_test < map.source_range_start + map.range_length
-            {
-                return map.dest_range_start + (seed_test - map.source_range_start);
-            }
+        match almanac_map
+            .iter()
+            .find(|map| map.source_range.contains(&seed_test))
+        {
+            Some(map) => return seed_test + map.diff,
+            None => (),
         }
 
         seed_test
     })
 }
 
-fn process_location_to_seed(location: u64, almanac_maps: &Vec<Vec<AlmanacMap>>) -> u64 {
-    almanac_maps
-        .iter()
-        .rev()
-        .fold(location, |location, almanac_map| {
-            for map in almanac_map {
-                if location >= map.dest_range_start
-                    && location < map.dest_range_start + map.range_length
-                {
-                    return map.source_range_start + (location - map.dest_range_start);
+fn ranged_explore(
+    seed_ranges: &Vec<Range<i64>>,
+    almanac_maps: &Vec<Vec<AlmanacMap>>,
+) -> Option<i64> {
+    let mut ranges: VecDeque<Range<i64>> = seed_ranges.iter().cloned().collect();
+    let mut next_ranges: VecDeque<Range<i64>> = VecDeque::new();
+
+    for stage in almanac_maps {
+        while let Some(mut seeds) = ranges.pop_front() {
+            for map in stage.iter() {
+                match seeds.intersect_ext(&map.source_range) {
+                    IntersectionExt::LessOverlap => {
+                        next_ranges
+                            .push_back(map.source_range.start + map.diff..seeds.end + map.diff);
+                        seeds = seeds.start..map.source_range.start;
+                    }
+                    IntersectionExt::GreaterOverlap => {
+                        next_ranges
+                            .push_back(seeds.start + map.diff..map.source_range.end + map.diff);
+                        seeds = map.source_range.end..seeds.end;
+                    }
+                    IntersectionExt::Within | IntersectionExt::Same => {
+                        next_ranges.push_back(seeds.start + map.diff..seeds.end + map.diff);
+                        seeds = 0..0;
+                        //continue 'seeds;
+                    }
+                    IntersectionExt::Over => {
+                        next_ranges.push_back(
+                            map.source_range.start + map.diff..map.source_range.end + map.diff,
+                        );
+                        ranges.push_front(seeds.start..map.source_range.start);
+                        ranges.push_front(map.source_range.end..seeds.end);
+                        seeds = 0..0;
+                        //continue 'seeds;
+                    }
+                    _ => {}
+                };
+
+                if seeds.is_empty() {
+                    break;
                 }
             }
 
-            location
-        })
+            if seeds.end > seeds.start {
+                next_ranges.push_back(seeds);
+            }
+        }
+
+        ranges = next_ranges;
+        next_ranges = VecDeque::new();
+    }
+
+    ranges.iter().map(|r| r.start).min()
 }
 
-fn seed_in_ranges(seed: u64, seed_ranges: &Vec<(u64, u64)>) -> bool {
-    seed_ranges
-        .iter()
-        .any(|(start, length)| seed >= *start && seed <= *start + *length)
-}
-
-pub fn part_one(input: &str) -> Option<u64> {
+pub fn part_one(input: &str) -> Option<i64> {
     let seeds = parse_seeds(input.lines().next().unwrap());
     let almanac_maps = parse_almanac_maps(input);
 
@@ -99,15 +136,11 @@ pub fn part_one(input: &str) -> Option<u64> {
         .min()
 }
 
-pub fn part_two(input: &str) -> Option<u64> {
+pub fn part_two(input: &str) -> Option<i64> {
     let seed_ranges = parse_seed_ranges(input.lines().next().unwrap());
     let almanac_maps = parse_almanac_maps(input);
 
-    (0..u64::MAX)
-        .map(|location| (location, process_location_to_seed(location, &almanac_maps)))
-        .filter(|(_, seed)| seed_in_ranges(*seed, &seed_ranges))
-        .map(|(location, _)| location)
-        .next()
+    ranged_explore(&seed_ranges, &almanac_maps)
 }
 
 #[cfg(test)]
@@ -122,7 +155,7 @@ mod tests {
                 .next()
                 .unwrap(),
         );
-        assert_eq!(seeds, vec![79_u64, 14, 55, 13]);
+        assert_eq!(seeds, vec![79_i64, 14, 55, 13]);
     }
 
     #[test]
