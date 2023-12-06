@@ -27,20 +27,10 @@ fn find_partition_point(start: u64, end: u64, race: &Race) -> u64 {
 }
 
 fn count_potential_wins(race: &Race) -> u64 {
-    let time_slots = race.time + 1; // account for 0 being a valid time
-    let half_time = time_slots / 2;
     // Check the left "half" (partition) for the point when race wins start
-    let partition_point = find_partition_point(0, half_time, race);
-    let partition_wins = half_time - partition_point;
+    let partition_point = find_partition_point(0, race.time / 2, race);
 
-    // Calculate increments on either side of partition_point
-    if time_slots % 2 != 0 {
-        // Odd race time
-        2 * partition_wins + 1
-    } else {
-        // Even race time
-        2 * partition_wins
-    }
+    (race.time - (partition_point * 2)) + 1
 }
 
 fn parse_races(input: &str) -> Vec<Race> {
