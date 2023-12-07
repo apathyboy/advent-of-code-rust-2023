@@ -22,13 +22,14 @@ Solutions for [Advent of Code](https://adventofcode.com/) in [Rust](https://www.
 
 | Day | Part 1 | Part 2 |
 | :---: | :---: | :---:  |
-| [Day 1](./src/bin/01.rs) | `78.4µs` | `608.4µs` |
-| [Day 2](./src/bin/02.rs) | `31.6µs` | `30.9µs` |
-| [Day 3](./src/bin/03.rs) | `44.9µs` | `154.3µs` |
-| [Day 4](./src/bin/04.rs) | `155.1µs` | `154.5µs` |
-| [Day 5](./src/bin/05.rs) | `30.7µs` | `53.7µs` |
-| [Day 6](./src/bin/06.rs) | `399.0ns` | `429.0ns` |
+| [Day 1](./src/bin/01.rs) | `79.9µs` | `606.7µs` |
+| [Day 2](./src/bin/02.rs) | `31.4µs` | `31.1µs` |
+| [Day 3](./src/bin/03.rs) | `43.2µs` | `155.1µs` |
+| [Day 4](./src/bin/04.rs) | `152.0µs` | `152.1µs` |
+| [Day 5](./src/bin/05.rs) | `30.5µs` | `52.0µs` |
+| [Day 6](./src/bin/06.rs) | `387.0ns` | `402.0ns` |
+| [Day 7](./src/bin/07.rs) | `427.9µs` | `505.2µs` |
 
-**Total: 1.34ms**
+**Total: 2.27ms**
 <!--- benchmarking table --->
 *Benchmarks performed on a 2021 M1 Macbook Pro, 16GB*
