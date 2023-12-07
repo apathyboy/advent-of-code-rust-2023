@@ -1,3 +1,4 @@
+use itertools::Itertools;
 use std::cmp::Ordering;
 
 advent_of_code::solution!(7);
@@ -79,18 +80,12 @@ fn identify_hand(hand: &Vec<u32>) -> Hand {
     }
 }
 
-fn parse_hand(input: &str, use_jokers: bool) -> Vec<u32> {
+fn parse_hand(input: &str, j_value: u32) -> Vec<u32> {
     input
         .chars()
         .map(|card| match card {
             'T' => 10,
-            'J' => {
-                if use_jokers {
-                    0
-                } else {
-                    11
-                }
-            }
+            'J' => j_value,
             'Q' => 12,
             'K' => 13,
             'A' => 14,
@@ -99,35 +94,28 @@ fn parse_hand(input: &str, use_jokers: bool) -> Vec<u32> {
         .collect()
 }
 
-fn parse_game(input: &str, use_jokers: bool) -> Game {
+fn parse_game(input: &str, j_value: u32) -> Game {
     let (hand, bid) = input.split_once(' ').unwrap();
-    let hand: Vec<u32> = parse_hand(hand, use_jokers);
+    let hand: Vec<u32> = parse_hand(hand, j_value);
     Game::new(identify_hand(&hand), hand, bid.parse().unwrap())
 }
 
-fn play_games(input: &str, use_jokers: bool) -> Option<u32> {
-    let mut games: Vec<Game> = input
+fn play_games(input: &str, j_value: u32) -> Option<u32> {
+    input
         .lines()
-        .map(|line| parse_game(line, use_jokers))
-        .collect();
-
-    games.sort_unstable();
-
-    let winnings = games
-        .iter()
+        .map(|line| parse_game(line, j_value))
+        .sorted()
         .enumerate()
-        .map(|(i, game)| (i as u32 + 1) * game.bid)
-        .sum();
-
-    Some(winnings)
+        .map(|(i, game)| Some((i as u32 + 1) * game.bid))
+        .sum()
 }
 
 pub fn part_one(input: &str) -> Option<u32> {
-    play_games(input, false)
+    play_games(input, 11)
 }
 
 pub fn part_two(input: &str) -> Option<u32> {
-    play_games(input, true)
+    play_games(input, 0)
 }
 
 #[cfg(test)]
@@ -135,70 +123,39 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_parse_hand_with_jacks() {
+        assert_eq!(parse_hand("32T3K", 11), vec![3, 2, 10, 3, 13]);
+        assert_eq!(parse_hand("T55J5", 11), vec![10, 5, 5, 11, 5]);
+        assert_eq!(parse_hand("KK677", 11), vec![13, 13, 6, 7, 7]);
+        assert_eq!(parse_hand("KTJJT", 11), vec![13, 10, 11, 11, 10]);
+        assert_eq!(parse_hand("QQQJA", 11), vec![12, 12, 12, 11, 14]);
+    }
+
+    #[test]
     fn test_parse_hand_with_jokers() {
-        assert_eq!(parse_hand("32T3K", true), vec![3, 2, 10, 3, 13]);
-        assert_eq!(parse_hand("T55J5", true), vec![10, 5, 5, 0, 5]);
-        assert_eq!(parse_hand("KK677", true), vec![13, 13, 6, 7, 7]);
-        assert_eq!(parse_hand("KTJJT", true), vec![13, 10, 0, 0, 10]);
-        assert_eq!(parse_hand("QQQJA", true), vec![12, 12, 12, 0, 14]);
+        assert_eq!(parse_hand("32T3K", 0), vec![3, 2, 10, 3, 13]);
+        assert_eq!(parse_hand("T55J5", 0), vec![10, 5, 5, 0, 5]);
+        assert_eq!(parse_hand("KK677", 0), vec![13, 13, 6, 7, 7]);
+        assert_eq!(parse_hand("KTJJT", 0), vec![13, 10, 0, 0, 10]);
+        assert_eq!(parse_hand("QQQJA", 0), vec![12, 12, 12, 0, 14]);
+    }
+
+    #[test]
+    fn test_identify_hand_with_jacks() {
+        assert_eq!(identify_hand(&parse_hand("32T3K", 11)), Hand::OnePair);
+        assert_eq!(identify_hand(&parse_hand("T55J5", 11)), Hand::ThreeOfAKind);
+        assert_eq!(identify_hand(&parse_hand("KK677", 11)), Hand::TwoPairs);
+        assert_eq!(identify_hand(&parse_hand("KTJJT", 11)), Hand::TwoPairs);
+        assert_eq!(identify_hand(&parse_hand("QQQJA", 11)), Hand::ThreeOfAKind);
     }
 
     #[test]
     fn test_identify_hand_with_jokers() {
-        assert_eq!(
-            identify_hand(&parse_hand("32T3K", false)),
-            Hand::OnePair,
-            "One pair"
-        );
-        assert_eq!(
-            identify_hand(&parse_hand("T55J5", false)),
-            Hand::ThreeOfAKind,
-            "Three of a kind"
-        );
-        assert_eq!(
-            identify_hand(&parse_hand("KK677", false)),
-            Hand::TwoPairs,
-            "Two pair"
-        );
-        assert_eq!(
-            identify_hand(&parse_hand("KTJJT", false)),
-            Hand::TwoPairs,
-            "Two pair"
-        );
-        assert_eq!(
-            identify_hand(&parse_hand("QQQJA", false)),
-            Hand::ThreeOfAKind,
-            "Three of a kind"
-        );
-    }
-
-    #[test]
-    fn test_identify_hand2() {
-        assert_eq!(
-            identify_hand(&parse_hand("32T3K", true)),
-            Hand::OnePair,
-            "One pair"
-        );
-        assert_eq!(
-            identify_hand(&parse_hand("T55J5", true)),
-            Hand::FourOfAKind,
-            "Four of a kind"
-        );
-        assert_eq!(
-            identify_hand(&parse_hand("KK677", true)),
-            Hand::TwoPairs,
-            "Two pair"
-        );
-        assert_eq!(
-            identify_hand(&parse_hand("KTJJT", true)),
-            Hand::FourOfAKind,
-            "Two pair"
-        );
-        assert_eq!(
-            identify_hand(&parse_hand("QQQJA", true)),
-            Hand::FourOfAKind,
-            "Three of a kind"
-        );
+        assert_eq!(identify_hand(&parse_hand("32T3K", 0)), Hand::OnePair);
+        assert_eq!(identify_hand(&parse_hand("T55J5", 0)), Hand::FourOfAKind);
+        assert_eq!(identify_hand(&parse_hand("KK677", 0)), Hand::TwoPairs);
+        assert_eq!(identify_hand(&parse_hand("KTJJT", 0)), Hand::FourOfAKind);
+        assert_eq!(identify_hand(&parse_hand("QQQJA", 0)), Hand::FourOfAKind);
     }
 
     #[test]
