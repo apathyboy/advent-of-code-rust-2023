@@ -1,3 +1,5 @@
+use std::cmp::Ordering;
+
 advent_of_code::solution!(7);
 
 #[derive(Debug, PartialEq, PartialOrd, Eq, Ord)]
@@ -11,21 +13,59 @@ enum Hand {
     FiveOfAKind,
 }
 
+#[derive(Debug, PartialEq, Eq)]
+struct Game {
+    hand: Hand,
+    cards: Vec<u32>,
+    bid: u32,
+}
+
+impl Game {
+    fn new(hand: Hand, cards: Vec<u32>, bid: u32) -> Self {
+        Self { hand, cards, bid }
+    }
+}
+
+impl Ord for Game {
+    fn cmp(&self, other: &Self) -> Ordering {
+        match self.hand.cmp(&other.hand) {
+            Ordering::Equal => self
+                .cards
+                .iter()
+                .zip(other.cards.iter())
+                .find_map(|(a, b)| match a.cmp(b) {
+                    Ordering::Equal => None,
+                    non_equal => Some(non_equal),
+                })
+                .unwrap(),
+            other => other,
+        }
+    }
+}
+
+impl PartialOrd for Game {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
 fn identify_hand(hand: &Vec<u32>) -> Hand {
-    let mut cards = hand.clone();
-    cards.sort_unstable();
     let mut counts: Vec<u32> = vec![0; 15];
-    for card in cards.iter() {
+    for card in hand {
         counts[*card as usize] += 1;
     }
-    let mut counts: Vec<(u32, u32)> = counts
-        .into_iter()
-        .enumerate()
-        .filter(|(_, count)| *count > 0)
-        .map(|(card, count)| (count, card as u32))
-        .collect();
+
+    let joker_counts = counts.remove(0);
+
+    counts.retain(|count| *count > 0);
     counts.sort_unstable();
-    let counts: Vec<u32> = counts.into_iter().map(|(count, _)| count).collect();
+
+    if joker_counts > 0 {
+        if let Some(last) = counts.last_mut() {
+            *last += joker_counts; // Update the last element
+        }
+    }
+
     match counts.as_slice() {
         [1, 1, 1, 1, 1] => Hand::HighCard,
         [1, 1, 1, 2] => Hand::OnePair,
@@ -34,16 +74,23 @@ fn identify_hand(hand: &Vec<u32>) -> Hand {
         [2, 3] => Hand::FullHouse,
         [1, 4] => Hand::FourOfAKind,
         [5] => Hand::FiveOfAKind,
+        [] => Hand::FiveOfAKind,
         _ => panic!("Invalid hand: {:?}", hand),
     }
 }
 
-fn parse_hand(input: &str) -> Vec<u32> {
+fn parse_hand(input: &str, use_jokers: bool) -> Vec<u32> {
     input
         .chars()
         .map(|card| match card {
             'T' => 10,
-            'J' => 11,
+            'J' => {
+                if use_jokers {
+                    0
+                } else {
+                    11
+                }
+            }
             'Q' => 12,
             'K' => 13,
             'A' => 14,
@@ -52,114 +99,35 @@ fn parse_hand(input: &str) -> Vec<u32> {
         .collect()
 }
 
-fn identify_hand2(hand: &Vec<u32>) -> Hand {
-    let mut cards = hand.clone();
-    cards.sort_unstable();
-    let mut counts: Vec<u32> = vec![0; 15];
-    for card in cards.iter() {
-        counts[*card as usize] += 1;
-    }
-    let mut counts: Vec<(u32, u32)> = counts
-        .into_iter()
+fn parse_game(input: &str, use_jokers: bool) -> Game {
+    let (hand, bid) = input.split_once(' ').unwrap();
+    let hand: Vec<u32> = parse_hand(hand, use_jokers);
+    Game::new(identify_hand(&hand), hand, bid.parse().unwrap())
+}
+
+fn play_games(input: &str, use_jokers: bool) -> Option<u32> {
+    let mut games: Vec<Game> = input
+        .lines()
+        .map(|line| parse_game(line, use_jokers))
+        .collect();
+
+    games.sort_unstable();
+
+    let winnings = games
+        .iter()
         .enumerate()
-        .filter(|(_, count)| *count > 0)
-        .map(|(card, count)| (count, card as u32))
-        .collect();
-    counts.sort_unstable();
+        .map(|(i, game)| (i as u32 + 1) * game.bid)
+        .sum();
 
-    let j_counts = cards.iter().filter(|card| **card == 0).count() as u32;
-    let mut counts: Vec<(u32, u32)> = counts
-        .into_iter()
-        .rev()
-        .filter(|(_, card)| *card != 0)
-        .collect();
-    if counts.is_empty() {
-        counts.push((5, 0));
-    } else {
-        counts[0].0 += j_counts;
-    }
-
-    let counts: Vec<u32> = counts.into_iter().rev().map(|(count, _)| count).collect();
-    match counts.as_slice() {
-        [1, 1, 1, 1, 1] => Hand::HighCard,
-        [1, 1, 1, 2] => Hand::OnePair,
-        [1, 2, 2] => Hand::TwoPairs,
-        [1, 1, 3] => Hand::ThreeOfAKind,
-        [2, 3] => Hand::FullHouse,
-        [1, 4] => Hand::FourOfAKind,
-        [5] => Hand::FiveOfAKind,
-        _ => panic!("Invalid hand: {:?}", hand),
-    }
-}
-
-fn parse_hand2(input: &str) -> Vec<u32> {
-    input
-        .chars()
-        .map(|card| match card {
-            'T' => 10,
-            'J' => 0,
-            'Q' => 12,
-            'K' => 13,
-            'A' => 14,
-            _ => card.to_digit(10).unwrap(),
-        })
-        .collect()
+    Some(winnings)
 }
 
 pub fn part_one(input: &str) -> Option<u32> {
-    let mut games: Vec<(Hand, Vec<u32>, u32)> = input
-        .lines()
-        .map(|line| {
-            let parts = line.split_once(' ').unwrap();
-            let cards: Vec<u32> = parse_hand(parts.0);
-            (identify_hand(&cards), cards, parts.1.parse().unwrap())
-        })
-        .collect();
-    games.sort_by(|a, b| match a.0.cmp(&b.0) {
-        std::cmp::Ordering::Equal => {
-            a.1.iter()
-                .zip(b.1.iter())
-                .map(|(a, b)| a.cmp(b))
-                .find(|order| *order != std::cmp::Ordering::Equal)
-                .unwrap()
-        }
-        other => other,
-    });
-    let winnings = games
-        .iter()
-        .enumerate()
-        .map(|(i, game)| (i as u32 + 1) * game.2)
-        .sum();
-
-    Some(winnings)
+    play_games(input, false)
 }
 
 pub fn part_two(input: &str) -> Option<u32> {
-    let mut games: Vec<(Hand, Vec<u32>, u32)> = input
-        .lines()
-        .map(|line| {
-            let parts = line.split_once(' ').unwrap();
-            let cards: Vec<u32> = parse_hand2(parts.0);
-            (identify_hand2(&cards), cards, parts.1.parse().unwrap())
-        })
-        .collect();
-    games.sort_by(|a, b| match a.0.cmp(&b.0) {
-        std::cmp::Ordering::Equal => {
-            a.1.iter()
-                .zip(b.1.iter())
-                .map(|(a, b)| a.cmp(b))
-                .find(|order| *order != std::cmp::Ordering::Equal)
-                .unwrap()
-        }
-        other => other,
-    });
-    let winnings = games
-        .iter()
-        .enumerate()
-        .map(|(i, game)| (i as u32 + 1) * game.2)
-        .sum();
-
-    Some(winnings)
+    play_games(input, true)
 }
 
 #[cfg(test)]
@@ -167,38 +135,38 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_parse_hand2() {
-        assert_eq!(parse_hand2("32T3K"), vec![3, 2, 10, 3, 13]);
-        assert_eq!(parse_hand2("T55J5"), vec![10, 5, 5, 0, 5]);
-        assert_eq!(parse_hand2("KK677"), vec![13, 13, 6, 7, 7]);
-        assert_eq!(parse_hand2("KTJJT"), vec![13, 10, 0, 0, 10]);
-        assert_eq!(parse_hand2("QQQJA"), vec![12, 12, 12, 0, 14]);
+    fn test_parse_hand_with_jokers() {
+        assert_eq!(parse_hand("32T3K", true), vec![3, 2, 10, 3, 13]);
+        assert_eq!(parse_hand("T55J5", true), vec![10, 5, 5, 0, 5]);
+        assert_eq!(parse_hand("KK677", true), vec![13, 13, 6, 7, 7]);
+        assert_eq!(parse_hand("KTJJT", true), vec![13, 10, 0, 0, 10]);
+        assert_eq!(parse_hand("QQQJA", true), vec![12, 12, 12, 0, 14]);
     }
 
     #[test]
-    fn test_identify_hand() {
+    fn test_identify_hand_with_jokers() {
         assert_eq!(
-            identify_hand(&parse_hand("32T3K")),
+            identify_hand(&parse_hand("32T3K", false)),
             Hand::OnePair,
             "One pair"
         );
         assert_eq!(
-            identify_hand(&parse_hand("T55J5")),
+            identify_hand(&parse_hand("T55J5", false)),
             Hand::ThreeOfAKind,
             "Three of a kind"
         );
         assert_eq!(
-            identify_hand(&parse_hand("KK677")),
+            identify_hand(&parse_hand("KK677", false)),
             Hand::TwoPairs,
             "Two pair"
         );
         assert_eq!(
-            identify_hand(&parse_hand("KTJJT")),
+            identify_hand(&parse_hand("KTJJT", false)),
             Hand::TwoPairs,
             "Two pair"
         );
         assert_eq!(
-            identify_hand(&parse_hand("QQQJA")),
+            identify_hand(&parse_hand("QQQJA", false)),
             Hand::ThreeOfAKind,
             "Three of a kind"
         );
@@ -207,27 +175,27 @@ mod tests {
     #[test]
     fn test_identify_hand2() {
         assert_eq!(
-            identify_hand2(&parse_hand2("32T3K")),
+            identify_hand(&parse_hand("32T3K", true)),
             Hand::OnePair,
             "One pair"
         );
         assert_eq!(
-            identify_hand2(&parse_hand2("T55J5")),
+            identify_hand(&parse_hand("T55J5", true)),
             Hand::FourOfAKind,
             "Four of a kind"
         );
         assert_eq!(
-            identify_hand2(&parse_hand2("KK677")),
+            identify_hand(&parse_hand("KK677", true)),
             Hand::TwoPairs,
             "Two pair"
         );
         assert_eq!(
-            identify_hand2(&parse_hand2("KTJJT")),
+            identify_hand(&parse_hand("KTJJT", true)),
             Hand::FourOfAKind,
             "Two pair"
         );
         assert_eq!(
-            identify_hand2(&parse_hand2("QQQJA")),
+            identify_hand(&parse_hand("QQQJA", true)),
             Hand::FourOfAKind,
             "Three of a kind"
         );
