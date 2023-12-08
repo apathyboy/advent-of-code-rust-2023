@@ -4,7 +4,7 @@ use std::collections::HashMap;
 advent_of_code::solution!(8);
 
 fn parse_input(input: &str) -> (&str, HashMap<&str, (&str, &str)>) {
-    let directions = input.lines().nth(0).unwrap();
+    let directions = input.lines().next().unwrap();
     let mut map: HashMap<&str, (&str, &str)> = HashMap::new();
 
     for line in input.lines().skip(2) {
@@ -44,8 +44,8 @@ pub fn part_two(input: &str) -> Option<u64> {
 
     let current = map
         .keys()
-        .filter(|k| k.ends_with("A"))
-        .map(|k| *k)
+        .filter(|k| k.ends_with('A'))
+        .copied()
         .collect::<Vec<&str>>();
 
     let searches: Vec<u64> = current
@@ -65,7 +65,7 @@ pub fn part_two(input: &str) -> Option<u64> {
 
                 acc += 1;
 
-                if cur.ends_with("Z") {
+                if cur.ends_with('Z') {
                     break;
                 }
             }
@@ -74,7 +74,7 @@ pub fn part_two(input: &str) -> Option<u64> {
         })
         .collect();
 
-    searches.iter().copied().reduce(|a, b| lcm(a, b))
+    searches.iter().copied().reduce(lcm)
 }
 
 #[cfg(test)]
