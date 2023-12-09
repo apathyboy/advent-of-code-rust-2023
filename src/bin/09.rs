@@ -9,15 +9,15 @@ fn parse_histories(input: &str) -> Vec<Vec<i32>> {
 
 fn process_history(history: &[i32]) -> Option<i32> {
     let mut extrapolated = history.last().copied().unwrap();
-    let mut sequence = history.to_vec();
+    let mut history = history.to_vec();
 
-    while !sequence.iter().all(|&x| x == 0) {
-        sequence = sequence
+    while !history.iter().all(|&x| x == 0) {
+        history = history
             .windows(2)
             .map(|slice| slice[1] - slice[0])
             .collect::<Vec<_>>();
 
-        extrapolated += sequence.last().copied().unwrap();
+        extrapolated += history.last().copied().unwrap();
     }
 
     Some(extrapolated)
