@@ -21,12 +21,10 @@ pub fn part_one(input: &str) -> Option<u32> {
     let mut current = "AAA";
 
     for c in directions.chars().cycle() {
-        let (left, right) = map.get(current).unwrap();
-
         if c == 'L' {
-            current = left;
+            current = map.get(current).unwrap().0;
         } else {
-            current = right;
+            current = map.get(current).unwrap().1;
         }
 
         acc += 1;
@@ -43,18 +41,19 @@ pub fn part_two(input: &str) -> Option<u64> {
     let (directions, map) = parse_input(input);
 
     map.keys()
-        .filter(|k| k.ends_with('A'))
-        .map(|k| {
+        .filter_map(|k| {
+            if !k.ends_with('A') {
+                return None;
+            }
+
             let mut acc = 0;
-            let mut cur = *k;
+            let mut cur = k;
 
             for c in directions.chars().cycle() {
-                let (left, right) = map.get(cur).unwrap();
-
                 if c == 'L' {
-                    cur = left;
+                    cur = &map.get(cur).unwrap().0;
                 } else {
-                    cur = right;
+                    cur = &map.get(cur).unwrap().1;
                 }
 
                 acc += 1;
@@ -64,7 +63,7 @@ pub fn part_two(input: &str) -> Option<u64> {
                 }
             }
 
-            acc
+            Some(acc)
         })
         .reduce(lcm)
 }
