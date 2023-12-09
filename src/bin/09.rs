@@ -8,64 +8,19 @@ fn parse_histories(input: &str) -> Vec<Vec<i32>> {
 }
 
 fn process_history(history: &[i32]) -> Option<i32> {
-    let mut sequences: Vec<Vec<i32>> = Vec::new();
-    let mut current_sequence = Vec::new();
+    let mut extrapolated = history.last().copied().unwrap();
+    let mut sequence = history.to_vec();
 
-    sequences.push(history.to_vec());
+    while !sequence.iter().all(|&x| x == 0) {
+        sequence = sequence
+            .windows(2)
+            .map(|slice| slice[1] - slice[0])
+            .collect::<Vec<_>>();
 
-    loop {
-        for slice in sequences.last().unwrap().windows(2) {
-            let (a, b) = (slice[0], slice[1]);
-
-            current_sequence.push(b - a);
-        }
-
-        sequences.push(current_sequence.clone());
-
-        if current_sequence.iter().sum::<i32>() == 0 {
-            break;
-        }
-
-        current_sequence.clear();
+        extrapolated += sequence.last().copied().unwrap();
     }
 
-    let mut last: i32 = 0;
-
-    for sequence in sequences.iter().rev() {
-        last += sequence.last().unwrap();
-    }
-
-    Some(last)
-}
-
-fn process_history2(history: &[i32]) -> Option<i32> {
-    let mut sequences: Vec<Vec<i32>> = Vec::new();
-    let mut current_sequence = Vec::new();
-    sequences.push(history.to_vec());
-
-    loop {
-        for slice in sequences.last().unwrap().windows(2) {
-            let (a, b) = (slice[0], slice[1]);
-
-            current_sequence.push(b - a);
-        }
-
-        sequences.push(current_sequence.clone());
-
-        if current_sequence.iter().sum::<i32>() == 0 {
-            break;
-        }
-
-        current_sequence.clear();
-    }
-
-    let mut first: i32 = 0;
-
-    for sequence in sequences.iter().rev() {
-        first = sequence.first().unwrap() - first;
-    }
-
-    Some(first)
+    Some(extrapolated)
 }
 
 pub fn part_one(input: &str) -> Option<i32> {
@@ -78,7 +33,10 @@ pub fn part_one(input: &str) -> Option<i32> {
 pub fn part_two(input: &str) -> Option<i32> {
     parse_histories(input)
         .iter()
-        .map(|history| process_history2(history))
+        .map(|history| {
+            let reversed = history.iter().rev().cloned().collect::<Vec<_>>();
+            process_history(&reversed)
+        })
         .sum()
 }
 
@@ -89,11 +47,6 @@ mod tests {
     #[test]
     fn test_process_history() {
         assert_eq!(process_history(&[0, 3, 6, 9, 12, 15]), Some(18));
-    }
-
-    #[test]
-    fn test_process_history2() {
-        assert_eq!(process_history2(&[10, 13, 16, 21, 30, 45]), Some(5));
     }
 
     #[test]
