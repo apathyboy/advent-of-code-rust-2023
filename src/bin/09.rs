@@ -4,20 +4,20 @@ fn parse_histories(input: &str) -> Vec<Vec<i32>> {
     input
         .lines()
         .map(advent_of_code::parse_space_separated)
-        .collect::<Vec<_>>()
+        .collect()
 }
 
 fn process_history(history: &[i32]) -> Option<i32> {
-    let mut extrapolated = history.last().copied().unwrap();
+    let mut extrapolated = *history.last().unwrap();
     let mut history = history.to_vec();
 
-    while !history.iter().all(|&x| x == 0) {
+    while history.iter().any(|&x| x != 0) {
         history = history
             .windows(2)
             .map(|slice| slice[1] - slice[0])
-            .collect::<Vec<_>>();
+            .collect();
 
-        extrapolated += history.last().copied().unwrap();
+        extrapolated += *history.last().unwrap();
     }
 
     Some(extrapolated)
