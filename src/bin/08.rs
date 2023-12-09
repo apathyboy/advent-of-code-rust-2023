@@ -1,4 +1,5 @@
 use num_integer::lcm;
+use rayon::prelude::*;
 use std::collections::HashMap;
 
 advent_of_code::solution!(8);
@@ -71,12 +72,18 @@ pub fn part_one(input: &str) -> Option<u64> {
 
 pub fn part_two(input: &str) -> Option<u64> {
     let (directions, map) = parse_input(input);
-    map.keys()
+
+    let keys: Vec<&u32> = map.keys().collect();
+
+    let tmp = keys
+        .into_par_iter()
         .filter_map(|k| match ends_with(*k, b'A') {
             true => traverse(&map, directions, *k, |c| ends_with(c, b'Z')),
             false => None,
         })
-        .reduce(lcm)
+        .collect::<Vec<u64>>();
+
+    tmp.into_iter().reduce(lcm)
 }
 
 #[cfg(test)]
