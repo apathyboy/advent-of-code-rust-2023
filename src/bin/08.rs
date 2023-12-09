@@ -42,14 +42,8 @@ pub fn part_one(input: &str) -> Option<u32> {
 pub fn part_two(input: &str) -> Option<u64> {
     let (directions, map) = parse_input(input);
 
-    let current = map
-        .keys()
+    map.keys()
         .filter(|k| k.ends_with('A'))
-        .copied()
-        .collect::<Vec<&str>>();
-
-    let searches: Vec<u64> = current
-        .iter()
         .map(|k| {
             let mut acc = 0;
             let mut cur = *k;
@@ -72,9 +66,7 @@ pub fn part_two(input: &str) -> Option<u64> {
 
             acc
         })
-        .collect();
-
-    searches.iter().copied().reduce(lcm)
+        .reduce(lcm)
 }
 
 #[cfg(test)]
