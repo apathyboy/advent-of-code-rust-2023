@@ -3,31 +3,38 @@ use std::collections::HashMap;
 
 advent_of_code::solution!(8);
 
-fn parse_input(input: &str) -> (&str, HashMap<&str, [&str; 2]>) {
-    let directions = input.lines().next().unwrap();
-    let mut map: HashMap<&str, [&str; 2]> = HashMap::new();
-
-    for line in input.lines().skip(2) {
-        map.insert(&line[0..3], [&line[7..10], &line[12..15]]);
+fn hash_string(s: &str) -> u32 {
+    let bytes = s.as_bytes();
+    if bytes.len() != 3 {
+        panic!("Invalid string length");
     }
 
-    (directions, map)
+    let mut result = 0;
+    result |= (bytes[0] as u32) << 16;
+    result |= (bytes[1] as u32) << 8;
+    result |= bytes[2] as u32;
+
+    result
+}
+
+fn ends_with(hashed_value: u32, val: u8) -> bool {
+    (hashed_value & 0xFF) as u8 == val
 }
 
 fn traverse(
-    map: &HashMap<&str, [&str; 2]>,
+    map: &HashMap<u32, [u32; 2]>,
     directions: &str,
-    start: &str,
-    f: fn(&str) -> bool,
+    start: u32,
+    f: impl Fn(u32) -> bool,
 ) -> Option<u64> {
     let mut acc = 0;
     let mut current = start;
 
     for c in directions.chars().cycle() {
         if c == 'L' {
-            current = map.get(current).unwrap()[0];
+            current = map.get(&current).unwrap()[0];
         } else {
-            current = map.get(current).unwrap()[1];
+            current = map.get(&current).unwrap()[1];
         }
 
         acc += 1;
@@ -40,18 +47,33 @@ fn traverse(
     Some(acc)
 }
 
+fn parse_input(input: &str) -> (&str, HashMap<u32, [u32; 2]>) {
+    let directions = input.lines().next().unwrap();
+    let mut map: HashMap<u32, [u32; 2]> = HashMap::new();
+
+    for line in input.lines().skip(2) {
+        map.insert(
+            hash_string(&line[0..3]),
+            [hash_string(&line[7..10]), hash_string(&line[12..15])],
+        );
+    }
+
+    (directions, map)
+}
+
 pub fn part_one(input: &str) -> Option<u64> {
     let (directions, map) = parse_input(input);
 
-    traverse(&map, directions, "AAA", |c| c == "ZZZ")
+    traverse(&map, directions, hash_string("AAA"), |c| {
+        c == hash_string("ZZZ")
+    })
 }
 
 pub fn part_two(input: &str) -> Option<u64> {
     let (directions, map) = parse_input(input);
-
     map.keys()
-        .filter_map(|k| match k.ends_with('A') {
-            true => traverse(&map, directions, k, |c| c.ends_with('Z')),
+        .filter_map(|k| match ends_with(*k, b'A') {
+            true => traverse(&map, directions, *k, |c| ends_with(c, b'Z')),
             false => None,
         })
         .reduce(lcm)
