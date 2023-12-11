@@ -13,22 +13,8 @@ enum Element {
     Galaxy,
 }
 
-fn expand_map(map: &HashMap<(i32, i32), Element>, width: i32, height: i32) -> (Vec<i32>, Vec<i32>) {
+fn find_column_expansions(map: &HashMap<(i32, i32), Element>, width: i32, height: i32) -> Vec<i32> {
     let mut column_expansions: Vec<i32> = Vec::new();
-    let mut row_expansions: Vec<i32> = Vec::new();
-
-    for y in 0..height {
-        let mut empty_row: bool = true;
-        for x in 0..width {
-            let element = map.get(&(x, y)).unwrap();
-            if element == &Element::Galaxy {
-                empty_row = false;
-            }
-        }
-        if empty_row {
-            row_expansions.push(y);
-        }
-    }
 
     for x in 0..width {
         let mut empty_column: bool = true;
@@ -43,7 +29,7 @@ fn expand_map(map: &HashMap<(i32, i32), Element>, width: i32, height: i32) -> (V
         }
     }
 
-    (column_expansions, row_expansions)
+    column_expansions
 }
 
 fn find_sum_distances(
@@ -55,12 +41,13 @@ fn find_sum_distances(
     let sum_distances = galaxies
         .iter()
         .cartesian_product(galaxies.iter())
-        .filter(|&(a, b)| a != b)
-        .map(|(a, b)| {
-            if (b.0 < a.0) || (a.0 == b.0 && b.1 < a.1) {
-                (b, a)
+        .filter_map(|(a, b)| {
+            if a == b {
+                None
+            } else if (b.0 < a.0) || (a.0 == b.0 && b.1 < a.1) {
+                Some((b, a))
             } else {
-                (a, b)
+                Some((a, b))
             }
         })
         .unique()
@@ -89,27 +76,35 @@ fn find_sum_distances(
 
 fn parse_input(input: &str) -> (Vec<(i32, i32)>, Vec<i32>, Vec<i32>) {
     let mut map: HashMap<(i32, i32), Element> = HashMap::new();
+    let mut galaxies: Vec<(i32, i32)> = Vec::new();
+    let mut row_expansions: Vec<i32> = Vec::new();
+
     let width = input.lines().count() as i32;
     let height = input.lines().next().unwrap().chars().count() as i32;
 
     for (y, line) in input.lines().enumerate() {
+        let mut is_row_expansion: bool = true;
+
         for (x, c) in line.chars().enumerate() {
             let element = match c {
                 '.' => Element::EmptySpace,
-                '#' => Element::Galaxy,
+                '#' => {
+                    galaxies.push((x as i32, y as i32));
+                    is_row_expansion = false;
+                    Element::Galaxy
+                }
                 _ => panic!("Unknown element"),
             };
+
             map.insert((x as i32, y as i32), element);
+        }
+
+        if is_row_expansion {
+            row_expansions.push(y as i32);
         }
     }
 
-    let galaxies: Vec<(i32, i32)> = map
-        .iter()
-        .filter(|(_, &v)| v == Element::Galaxy)
-        .map(|(pos, _)| *pos)
-        .collect();
-
-    let (column_expansions, row_expansions) = expand_map(&map, width, height);
+    let column_expansions = find_column_expansions(&map, width, height);
 
     (galaxies, column_expansions, row_expansions)
 }
