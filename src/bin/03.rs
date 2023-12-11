@@ -3,7 +3,7 @@ use std::collections::HashMap;
 
 advent_of_code::solution!(3);
 
-fn check_for_symbol(map: &Vec<&str>, i: i32, j: i32) -> bool {
+fn check_for_symbol(map: &[&str], i: i32, j: i32) -> bool {
     let positions = [
         (1, 0),
         (1, 1),
@@ -32,7 +32,7 @@ fn check_for_symbol(map: &Vec<&str>, i: i32, j: i32) -> bool {
     false
 }
 
-fn find_gears(map: &Vec<&str>, i: i32, j: i32, found_gears: &mut Vec<(usize, usize)>) {
+fn find_gears(map: &[&str], i: i32, j: i32, found_gears: &mut Vec<(usize, usize)>) {
     let positions = [
         (1, 0),
         (1, 1),

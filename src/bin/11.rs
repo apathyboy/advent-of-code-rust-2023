@@ -21,11 +21,8 @@ fn expand_map(map: &HashMap<(i32, i32), Element>, width: i32, height: i32) -> (V
         let mut empty_row: bool = true;
         for x in 0..width {
             let element = map.get(&(x, y)).unwrap();
-            match element {
-                Element::Galaxy => {
-                    empty_row = false;
-                }
-                _ => {}
+            if element == &Element::Galaxy {
+                empty_row = false;
             }
         }
         if empty_row {
@@ -37,11 +34,8 @@ fn expand_map(map: &HashMap<(i32, i32), Element>, width: i32, height: i32) -> (V
         let mut empty_column: bool = true;
         for y in 0..height {
             let element = map.get(&(x, y)).unwrap();
-            match element {
-                Element::Galaxy => {
-                    empty_column = false;
-                }
-                _ => {}
+            if element == &Element::Galaxy {
+                empty_column = false;
             }
         }
         if empty_column {
@@ -53,9 +47,9 @@ fn expand_map(map: &HashMap<(i32, i32), Element>, width: i32, height: i32) -> (V
 }
 
 fn find_sum_distances(
-    galaxies: &Vec<(i32, i32)>,
-    column_expansions: &Vec<i32>,
-    row_expansions: &Vec<i32>,
+    galaxies: &[(i32, i32)],
+    column_expansions: &[i32],
+    row_expansions: &[i32],
     growth_factor: u64,
 ) -> Option<u64> {
     let sum_distances = galaxies
@@ -71,8 +65,8 @@ fn find_sum_distances(
         })
         .unique()
         .map(|(a, b)| {
-            let x_diff = (a.0 - b.0).abs() as u64;
-            let y_diff = (a.1 - b.1).abs() as u64;
+            let x_diff = (a.0 - b.0).unsigned_abs() as u64;
+            let y_diff = (a.1 - b.1).unsigned_abs() as u64;
 
             let x_expansion = column_expansions
                 .iter()
