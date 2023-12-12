@@ -29,7 +29,7 @@ impl Tile {
 }
 
 fn find_next_position(
-    map: &Vec<Vec<Tile>>,
+    map: &[Vec<Tile>],
     visited: &[(usize, usize)],
     x: usize,
     y: usize,
@@ -120,7 +120,7 @@ fn find_next_position(
     None
 }
 
-fn find_pipe_loop(map: &Vec<Vec<Tile>>, start_x: usize, start_y: usize) -> Vec<(usize, usize)> {
+fn find_pipe_loop(map: &[Vec<Tile>], start_x: usize, start_y: usize) -> Vec<(usize, usize)> {
     let mut visited: Vec<(usize, usize)> = Vec::new();
     visited.push((start_x, start_y));
 
@@ -180,7 +180,7 @@ fn parse(input: &str) -> (Vec<Vec<Tile>>, Vec<(usize, usize)>) {
     let mut start_x: usize = 0;
     let mut start_y: usize = 0;
 
-    let map = input
+    let map: Vec<Vec<Tile>> = input
         .lines()
         .enumerate()
         .map(|(y, line)| {
