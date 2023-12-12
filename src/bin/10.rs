@@ -1,8 +1,6 @@
-use std::collections::HashMap;
-
 advent_of_code::solution!(10);
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Tile {
     Start,
     Ground,
@@ -14,37 +12,55 @@ enum Tile {
     SouthEastPipe,
 }
 
+impl Tile {
+    fn from(c: char) -> Self {
+        match c {
+            'S' => Tile::Start,
+            '.' => Tile::Ground,
+            '|' => Tile::VerticalPipe,
+            '-' => Tile::HorizontalPipe,
+            'L' => Tile::NorthEastPipe,
+            'J' => Tile::NorthWestPipe,
+            '7' => Tile::SouthWestPipe,
+            'F' => Tile::SouthEastPipe,
+            _ => panic!("Unknown tile: {}", c),
+        }
+    }
+}
+
 fn find_next_position(
-    map: &HashMap<(i32, i32), Tile>,
-    visited: &[(i32, i32)],
-    x: i32,
-    y: i32,
-) -> Option<(i32, i32)> {
-    let directions = vec![
+    map: &Vec<Vec<Tile>>,
+    visited: &[(usize, usize)],
+    x: usize,
+    y: usize,
+) -> Option<(usize, usize)> {
+    let directions: Vec<(i32, i32)> = vec![
         (0, -1), // North
         (1, 0),  // East
         (0, 1),  // South
         (-1, 0), // West
     ];
 
-    let current_tile = map.get(&(x, y)).unwrap();
+    let current_tile = &map[y][x];
 
     //println!("Current tile: {:?}", current_tile);
 
     for (dx, dy) in directions {
-        let (x, y) = (x + dx, y + dy);
+        if (x == 0 && dx == -1)
+            || (y == 0 && dy == -1)
+            || (x == map[0].len() - 1 && dx == 1)
+            || (y == map.len() - 1 && dy == 1)
+        {
+            continue;
+        }
+
+        let (x, y) = ((x as i32 + dx) as usize, (y as i32 + dy) as usize);
 
         if visited.contains(&(x, y)) {
             continue;
         }
 
-        let tile = map.get(&(x, y));
-
-        if tile.is_none() {
-            continue;
-        }
-
-        let tile = tile.unwrap();
+        let tile = &map[y][x];
 
         if dy == -1
             && (*current_tile == Tile::VerticalPipe
@@ -104,8 +120,8 @@ fn find_next_position(
     None
 }
 
-fn find_pipe_loop(map: &HashMap<(i32, i32), Tile>, start_x: i32, start_y: i32) -> Vec<(i32, i32)> {
-    let mut visited: Vec<(i32, i32)> = Vec::new();
+fn find_pipe_loop(map: &Vec<Vec<Tile>>, start_x: usize, start_y: usize) -> Vec<(usize, usize)> {
+    let mut visited: Vec<(usize, usize)> = Vec::new();
     visited.push((start_x, start_y));
 
     let mut current_position = (start_x, start_y);
@@ -119,182 +135,117 @@ fn find_pipe_loop(map: &HashMap<(i32, i32), Tile>, start_x: i32, start_y: i32) -
 
     visited
 }
+fn find_start_tile_type(
+    pipe_section: (usize, usize),
+    prev_pipe_section: (usize, usize),
+    next_pipe_section: (usize, usize),
+) -> Tile {
+    let (x, y) = pipe_section;
+    let (prev_x, prev_y) = prev_pipe_section;
+    let (next_x, next_y) = next_pipe_section;
 
-#[allow(clippy::type_complexity)]
-fn parse_map(input: &str) -> (HashMap<(i32, i32), Tile>, Vec<(i32, i32)>) {
-    let mut map: HashMap<(i32, i32), Tile> = HashMap::new();
-    let mut start_x = 0;
-    let mut start_y = 0;
-
-    for (y, line) in input.lines().enumerate() {
-        for (x, c) in line.chars().enumerate() {
-            let tile = match c {
-                '.' => Tile::Ground,
-                'S' => Tile::Start,
-                '|' => Tile::VerticalPipe,
-                '-' => Tile::HorizontalPipe,
-                'L' => Tile::NorthEastPipe,
-                'J' => Tile::NorthWestPipe,
-                '7' => Tile::SouthWestPipe,
-                'F' => Tile::SouthEastPipe,
-                _ => panic!("Unknown tile: {}", c),
-            };
-
-            if c == 'S' {
-                start_x = x as i32;
-                start_y = y as i32;
-            }
-
-            map.insert((x as i32, y as i32), tile);
-        }
+    if (x == prev_x && y == prev_y - 1 && x == next_x && y == next_y + 1)
+        || (x == prev_x && y == prev_y + 1 && x == next_x && y == next_y - 1)
+    {
+        Tile::VerticalPipe
+    } else if (x == prev_x - 1 && y == prev_y && x == next_x + 1 && y == next_y)
+        || (x == prev_x + 1 && y == prev_y && x == next_x - 1 && y == next_y)
+    {
+        Tile::HorizontalPipe
+    } else if (x == prev_x + 1 && y == prev_y && x == next_x && y == next_y - 1)
+        || (x == prev_x && y == prev_y - 1 && x == next_x + 1 && y == next_y)
+    {
+        Tile::SouthWestPipe
+    } else if (x == prev_x && y == prev_y - 1 && x == next_x - 1 && y == next_y)
+        || (x == prev_x - 1 && y == prev_y && x == next_x && y == next_y - 1)
+    {
+        Tile::SouthEastPipe
+    } else if (x == prev_x && y == prev_y + 1 && x == next_x - 1 && y == next_y)
+        || (x == prev_x - 1 && y == prev_y && x == next_x && y == next_y + 1)
+    {
+        Tile::NorthEastPipe
+    } else if (x == prev_x + 1 && y == prev_y && x == next_x && y == next_y + 1)
+        || (x == prev_x && y == prev_y + 1 && x == next_x + 1 && y == next_y)
+    {
+        Tile::NorthWestPipe
+    } else {
+        panic!(
+            "Unknown pipe type: ({}, {}) ({}, {}) ({}, {})",
+            x, y, prev_x, prev_y, next_x, next_y
+        );
     }
+}
+
+fn parse(input: &str) -> (Vec<Vec<Tile>>, Vec<(usize, usize)>) {
+    let mut start_x: usize = 0;
+    let mut start_y: usize = 0;
+
+    let map = input
+        .lines()
+        .enumerate()
+        .map(|(y, line)| {
+            line.chars()
+                .enumerate()
+                .map(|(x, c)| {
+                    let tile = Tile::from(c);
+
+                    if tile == Tile::Start {
+                        start_x = x;
+                        start_y = y;
+                    }
+
+                    tile
+                })
+                .collect()
+        })
+        .collect();
 
     let pipe_loop = find_pipe_loop(&map, start_x, start_y);
 
     (map, pipe_loop)
 }
 
-//fn find_start_tile_type(
-//    pipe_section: (i32, i32),
-//    prev_pipe_section: (i32, i32),
-//    next_pipe_section: (i32, i32),
-//) -> Tile {
-//    let (x, y) = pipe_section;
-//    let (prev_x, prev_y) = prev_pipe_section;
-//    let (next_x, next_y) = next_pipe_section;
-//
-//    if (x == prev_x && y == prev_y - 1 && x == next_x && y == next_y + 1)
-//        || (x == prev_x && y == prev_y + 1 && x == next_x && y == next_y - 1)
-//    {
-//        Tile::VerticalPipe
-//    } else if (x == prev_x - 1 && y == prev_y && x == next_x + 1 && y == next_y)
-//        || (x == prev_x + 1 && y == prev_y && x == next_x - 1 && y == next_y)
-//    {
-//        Tile::HorizontalPipe
-//    } else if (x == prev_x + 1 && y == prev_y && x == next_x && y == next_y - 1)
-//        || (x == prev_x && y == prev_y - 1 && x == next_x + 1 && y == next_y)
-//    {
-//        Tile::SouthWestPipe
-//    } else if (x == prev_x && y == prev_y - 1 && x == next_x - 1 && y == next_y)
-//        || (x == prev_x - 1 && y == prev_y && x == next_x && y == next_y - 1)
-//    {
-//        Tile::SouthEastPipe
-//    } else if (x == prev_x && y == prev_y + 1 && x == next_x - 1 && y == next_y)
-//        || (x == prev_x - 1 && y == prev_y && x == next_x && y == next_y + 1)
-//    {
-//        Tile::NorthEastPipe
-//    } else if (x == prev_x + 1 && y == prev_y && x == next_x && y == next_y + 1)
-//        || (x == prev_x && y == prev_y + 1 && x == next_x + 1 && y == next_y)
-//    {
-//        Tile::NorthWestPipe
-//    } else {
-//        panic!(
-//            "Unknown pipe type: ({}, {}) ({}, {}) ({}, {})",
-//            x, y, prev_x, prev_y, next_x, next_y
-//        );
-//    }
-//}
-//
-// examine the tile to the left of the test position to see if it's part of the pipe loop and if not, continue exploring in all directions until we find a pipe loop tile or an edge tile
-// if an edge tile is found, then we know that the pipe loop is on the outer edge of the map
-//fn explore_lefthand(
-//    map: &HashMap<(i32, i32), Tile>,
-//    pipe_loop: &Vec<(i32, i32)>,
-//    pipe_section: (i32, i32),
-//    check_direction: (i32, i32),
-//) -> (Vec<(i32, i32)>, bool) {
-//    let mut visited: Vec<(i32, i32)> = Vec::new();
-//    let mut is_inner: bool = true;
-//
-//    let mut to_check: VecDeque<(i32, i32)> = VecDeque::new();
-//
-//    to_check.push_back((
-//        pipe_section.0 + check_direction.0,
-//        pipe_section.1 + check_direction.1,
-//    ));
-//
-//    while !to_check.is_empty() {
-//        let (x, y) = to_check.pop_front().unwrap();
-//
-//        if visited.contains(&(x, y)) || pipe_loop.contains(&(x, y)) {
-//            continue;
-//        }
-//
-//        if !map.contains_key(&(x, y)) {
-//            is_inner = false;
-//            continue;
-//        }
-//
-//        visited.push((x, y));
-//
-//        to_check.push_back((x, y - 1));
-//        to_check.push_back((x + 1, y));
-//        to_check.push_back((x, y + 1));
-//        to_check.push_back((x - 1, y));
-//    }
-//
-//    (visited, is_inner)
-//}
-
 pub fn part_one(input: &str) -> Option<u32> {
-    let (_, pipe_loop) = parse_map(input);
-
+    let (_, pipe_loop) = parse(input);
     Some(pipe_loop.len() as u32 / 2)
 }
 
-pub fn part_two(_input: &str) -> Option<u32> {
-    //let (map, pipe_loop) = parse_map(input);
-    //
-    //let mut visited: Vec<(i32, i32)> = Vec::new();
-    //let mut is_inner: bool = true;
-    //
-    //println!("pipe_loop: {:?}", pipe_loop);
-    //let mut prev_tile =
-    //    find_start_tile_type(pipe_loop[0], pipe_loop[1], pipe_loop[pipe_loop.len() - 1]);
-    //let mut check_direction = (0, -1);
-    //
-    //for (i, (x, y)) in pipe_loop.iter().enumerate() {
-    //    println!("i: {}, x: {}, y: {}", i, *x, *y);
-    //    let pipe_tile = map.get(&(*x, *y)).unwrap();
-    //
-    //    println!("prev_tile: {:?}", prev_tile);
-    //
-    //    //if i != 0 {
-    //    //    match pipe_tile {
-    //    //        Tile::VerticalPipe {
-    //    //            if check_direction == ()
-    //    //        }
-    //    //        _ => {}
-    //    //    }
-    //    //}
-    //
-    //    println!("Checking ({}, {}) {:?}", x, y, check_direction);
-    //
-    //    let (found, is_inner_check) = explore_lefthand(&map, &pipe_loop, (*x, *y), check_direction);
-    //
-    //    println!("Found: {:?}", found);
-    //    println!("Is inner: {}", is_inner_check);
-    //
-    //    visited.extend(found);
-    //
-    //    if !is_inner_check {
-    //        is_inner = false;
-    //    }
-    //}
-    //
-    //visited = visited.iter().unique().cloned().collect();
-    //
-    //println!("is_inner: {}", is_inner);
-    //println!("map.len(): {}", map.len());
-    //println!("pipe_loop.len(): {}", pipe_loop.len());
-    //println!("visited.len(): {}", visited.len());
-    //
-    //if is_inner {
-    //    Some(visited.len() as u32)
-    //} else {
-    //    Some((map.len() - pipe_loop.len() - visited.iter().unique().count()) as u32)
-    //}
-    None
+pub fn part_two(input: &str) -> Option<u32> {
+    let (map, pipe_loop) = parse(input);
+
+    let start_tile =
+        find_start_tile_type(pipe_loop[0], pipe_loop[1], pipe_loop[pipe_loop.len() - 1]);
+
+    let map: Vec<Vec<Tile>> = map
+        .into_iter()
+        .enumerate()
+        .map(|(y, line)| {
+            line.into_iter()
+                .enumerate()
+                .map(|(x, tile)| match tile {
+                    Tile::Start => start_tile,
+                    pipe if pipe_loop.contains(&(x, y)) => pipe,
+                    _ => Tile::Ground,
+                })
+                .collect()
+        })
+        .collect();
+
+    let mut inside = false;
+    let tile_count = map
+        .into_iter()
+        .flatten()
+        .filter(|tile| match tile {
+            Tile::Ground => inside,
+            Tile::VerticalPipe | Tile::NorthWestPipe | Tile::NorthEastPipe => {
+                inside = !inside;
+                false
+            }
+            _ => false,
+        })
+        .count();
+
+    Some(tile_count as u32)
 }
 
 #[cfg(test)]
@@ -320,6 +271,22 @@ mod tests {
         let result = part_two(&advent_of_code::template::read_file_part(
             "examples", DAY, 3,
         ));
-        assert_eq!(result, None);
+        assert_eq!(result, Some(4));
+    }
+
+    #[test]
+    fn test_part_two_2() {
+        let result = part_two(&advent_of_code::template::read_file_part(
+            "examples", DAY, 4,
+        ));
+        assert_eq!(result, Some(8));
+    }
+
+    #[test]
+    fn test_part_two_3() {
+        let result = part_two(&advent_of_code::template::read_file_part(
+            "examples", DAY, 5,
+        ));
+        assert_eq!(result, Some(10));
     }
 }
