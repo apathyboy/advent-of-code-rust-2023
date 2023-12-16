@@ -20,22 +20,31 @@ impl Beam {
     }
 }
 
+const UP: usize = 0;
+const DOWN: usize = 1;
+const LEFT: usize = 2;
+const RIGHT: usize = 3;
+
 fn explore(map: &[Vec<char>], starting_beam: &Beam) -> u32 {
     let mut beams: Vec<Beam> = Vec::new();
     let mut energized: HashSet<(Point2D, Point2D)> = HashSet::new();
+    let mut new_beams: Vec<Beam> = Vec::new();
+
+    let directions = vec![
+        Point2D::new(0, -1),
+        Point2D::new(0, 1),
+        Point2D::new(-1, 0),
+        Point2D::new(1, 0),
+    ];
 
     beams.push(*starting_beam);
 
     while !beams.is_empty() {
-        let mut new_beams: Vec<Beam> = Vec::new();
-
         let mut idx = 0;
         while idx < beams.len() {
             let beam = &mut beams[idx];
 
-            let new_position = beam.position.add(&beam.direction);
-
-            beam.position = new_position;
+            beam.position = beam.position.add(&beam.direction);
 
             if beam.position.x as usize >= map.len()
                 || beam.position.y as usize >= map[beam.position.x as usize].len()
@@ -53,53 +62,43 @@ fn explore(map: &[Vec<char>], starting_beam: &Beam) -> u32 {
                 '.' => {}
                 '/' => match beam.direction {
                     Point2D { x: 1, y: 0 } => {
-                        beam.direction.x = 0;
-                        beam.direction.y = -1;
+                        beam.direction = directions[UP];
                     }
                     Point2D { x: 0, y: 1 } => {
-                        beam.direction.x = -1;
-                        beam.direction.y = 0;
+                        beam.direction = directions[LEFT];
                     }
                     Point2D { x: -1, y: 0 } => {
-                        beam.direction.x = 0;
-                        beam.direction.y = 1;
+                        beam.direction = directions[DOWN];
                     }
                     Point2D { x: 0, y: -1 } => {
-                        beam.direction.x = 1;
-                        beam.direction.y = 0;
+                        beam.direction = directions[RIGHT];
                     }
                     _ => panic!("Invalid beam direction"),
                 },
                 '\\' => match beam.direction {
                     Point2D { x: 1, y: 0 } => {
-                        beam.direction.x = 0;
-                        beam.direction.y = 1;
+                        beam.direction = directions[DOWN];
                     }
                     Point2D { x: 0, y: 1 } => {
-                        beam.direction.x = 1;
-                        beam.direction.y = 0;
+                        beam.direction = directions[RIGHT];
                     }
                     Point2D { x: -1, y: 0 } => {
-                        beam.direction.x = 0;
-                        beam.direction.y = -1;
+                        beam.direction = directions[UP];
                     }
                     Point2D { x: 0, y: -1 } => {
-                        beam.direction.x = -1;
-                        beam.direction.y = 0;
+                        beam.direction = directions[LEFT];
                     }
                     _ => panic!("Invalid beam direction"),
                 },
                 '-' => {
                     if beam.direction.y != 0 {
-                        beam.direction.x = 1;
-                        beam.direction.y = 0;
+                        beam.direction = directions[RIGHT];
                         new_beams.push(Beam::new(Point2D::new(-1, 0), beam.position));
                     }
                 }
                 '|' => {
                     if beam.direction.x != 0 {
-                        beam.direction.y = 1;
-                        beam.direction.x = 0;
+                        beam.direction = directions[DOWN];
                         new_beams.push(Beam::new(Point2D::new(0, -1), beam.position));
                     }
                 }
