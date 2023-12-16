@@ -1,18 +1,19 @@
 use advent_of_code::Point2D;
 use itertools::Itertools;
+use once_cell::sync::Lazy;
 use rayon::prelude::*;
-use std::collections::HashSet;
+use std::collections::HashSet; // Add this line to import the `once_cell` crate
 
 advent_of_code::solution!(16);
 
 #[derive(Debug, Copy, Clone)]
-struct Beam {
-    direction: Point2D,
+struct Beam<'a> {
+    direction: &'a Point2D,
     position: Point2D,
 }
 
-impl Beam {
-    fn new(direction: Point2D, position: Point2D) -> Self {
+impl<'a> Beam<'a> {
+    fn new(direction: &'a Point2D, position: Point2D) -> Self {
         Self {
             direction,
             position,
@@ -25,17 +26,19 @@ const DOWN: usize = 1;
 const LEFT: usize = 2;
 const RIGHT: usize = 3;
 
-fn explore(map: &[Vec<char>], starting_beam: &Beam) -> u32 {
-    let mut beams: Vec<Beam> = Vec::new();
-    let mut energized: HashSet<(Point2D, Point2D)> = HashSet::new();
-    let mut new_beams: Vec<Beam> = Vec::new();
-
-    let directions = vec![
+static DIRECTIONS: Lazy<Vec<Point2D>> = Lazy::new(|| {
+    vec![
         Point2D::new(0, -1),
         Point2D::new(0, 1),
         Point2D::new(-1, 0),
         Point2D::new(1, 0),
-    ];
+    ]
+});
+
+fn explore(map: &[Vec<char>], starting_beam: &Beam) -> u32 {
+    let mut beams: Vec<Beam> = Vec::new();
+    let mut energized: HashSet<(Point2D, &Point2D)> = HashSet::new();
+    let mut new_beams: Vec<Beam> = Vec::new();
 
     beams.push(*starting_beam);
 
@@ -62,44 +65,44 @@ fn explore(map: &[Vec<char>], starting_beam: &Beam) -> u32 {
                 '.' => {}
                 '/' => match beam.direction {
                     Point2D { x: 1, y: 0 } => {
-                        beam.direction = directions[UP];
+                        beam.direction = &DIRECTIONS[UP];
                     }
                     Point2D { x: 0, y: 1 } => {
-                        beam.direction = directions[LEFT];
+                        beam.direction = &DIRECTIONS[LEFT];
                     }
                     Point2D { x: -1, y: 0 } => {
-                        beam.direction = directions[DOWN];
+                        beam.direction = &DIRECTIONS[DOWN];
                     }
                     Point2D { x: 0, y: -1 } => {
-                        beam.direction = directions[RIGHT];
+                        beam.direction = &DIRECTIONS[RIGHT];
                     }
                     _ => panic!("Invalid beam direction"),
                 },
                 '\\' => match beam.direction {
                     Point2D { x: 1, y: 0 } => {
-                        beam.direction = directions[DOWN];
+                        beam.direction = &DIRECTIONS[DOWN];
                     }
                     Point2D { x: 0, y: 1 } => {
-                        beam.direction = directions[RIGHT];
+                        beam.direction = &DIRECTIONS[RIGHT];
                     }
                     Point2D { x: -1, y: 0 } => {
-                        beam.direction = directions[UP];
+                        beam.direction = &DIRECTIONS[UP];
                     }
                     Point2D { x: 0, y: -1 } => {
-                        beam.direction = directions[LEFT];
+                        beam.direction = &DIRECTIONS[LEFT];
                     }
                     _ => panic!("Invalid beam direction"),
                 },
                 '-' => {
                     if beam.direction.y != 0 {
-                        beam.direction = directions[RIGHT];
-                        new_beams.push(Beam::new(Point2D::new(-1, 0), beam.position));
+                        beam.direction = &DIRECTIONS[RIGHT];
+                        new_beams.push(Beam::new(&DIRECTIONS[LEFT], beam.position));
                     }
                 }
                 '|' => {
                     if beam.direction.x != 0 {
-                        beam.direction = directions[DOWN];
-                        new_beams.push(Beam::new(Point2D::new(0, -1), beam.position));
+                        beam.direction = &DIRECTIONS[DOWN];
+                        new_beams.push(Beam::new(&DIRECTIONS[UP], beam.position));
                     }
                 }
                 _ => panic!("Invalid map tile"),
@@ -118,7 +121,7 @@ fn explore(map: &[Vec<char>], starting_beam: &Beam) -> u32 {
 pub fn part_one(input: &str) -> Option<u32> {
     let map: Vec<Vec<char>> = input.lines().map(|line| line.chars().collect()).collect();
 
-    let beam = Beam::new(Point2D::new(1, 0), Point2D::new(-1, 0));
+    let beam = Beam::new(&DIRECTIONS[RIGHT], Point2D::new(-1, 0));
 
     Some(explore(&map, &beam))
 }
@@ -132,13 +135,13 @@ pub fn part_two(input: &str) -> Option<u32> {
     let height = map.len() as isize;
 
     for x in 0..width {
-        beams.push(Beam::new(Point2D::new(0, 1), Point2D::new(x, -1)));
-        beams.push(Beam::new(Point2D::new(0, -1), Point2D::new(x, height)));
+        beams.push(Beam::new(&DIRECTIONS[DOWN], Point2D::new(x, -1)));
+        beams.push(Beam::new(&DIRECTIONS[UP], Point2D::new(x, height)));
     }
 
     for y in 0..height {
-        beams.push(Beam::new(Point2D::new(1, 0), Point2D::new(-1, y)));
-        beams.push(Beam::new(Point2D::new(-1, 0), Point2D::new(width, y)));
+        beams.push(Beam::new(&DIRECTIONS[RIGHT], Point2D::new(-1, y)));
+        beams.push(Beam::new(&DIRECTIONS[LEFT], Point2D::new(width, y)));
     }
 
     beams.into_par_iter().map(|beam| explore(&map, &beam)).max()

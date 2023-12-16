@@ -9,6 +9,7 @@ dependencies = [
  "cached",
  "itertools",
  "num-integer",
+ "once_cell",
  "pico-args",
  "range-ext",
  "rayon",
