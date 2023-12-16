@@ -3,6 +3,29 @@ pub mod template;
 
 pub use day::*;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct Point2D {
+    pub x: isize,
+    pub y: isize,
+}
+
+impl Point2D {
+    pub fn new(x: isize, y: isize) -> Self {
+        Self { x, y }
+    }
+
+    pub fn manhattan_distance(&self, other: &Self) -> usize {
+        (self.x - other.x).unsigned_abs() + (self.y - other.y).unsigned_abs()
+    }
+
+    pub fn add(&self, other: &Self) -> Self {
+        Self {
+            x: self.x + other.x,
+            y: self.y + other.y,
+        }
+    }
+}
+
 pub fn parse_space_separated<T>(s: &str) -> Vec<T>
 where
     T: Default + Clone + std::str::FromStr,
