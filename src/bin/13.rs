@@ -1,108 +1,67 @@
+use itertools::Itertools;
+
 advent_of_code::solution!(13);
 
-#[derive(Debug)]
-struct Map {
-    map: Vec<Vec<char>>,
-    width: usize,
-    height: usize,
+#[derive(Debug, PartialEq, Eq)]
+enum Reflection {
+    Horizontal(usize),
+    Vertical(usize),
 }
 
-impl Map {
-    fn new(map: Vec<Vec<char>>) -> Self {
-        let width = map[0].len();
-        let height = map.len();
-
-        Self { map, width, height }
-    }
-}
-
-fn parse_map(input: &str) -> Map {
-    let map = input
-        .lines()
-        .map(|line| line.chars().collect::<Vec<char>>())
-        .collect();
-
-    Map::new(map)
-}
-
-fn parse(input: &str) -> Vec<Map> {
-    input
-        .replace("\r\n", "\n")
-        .split("\n\n")
-        .map(parse_map)
-        .collect()
-}
-
-fn compare_columns(map: &Map, col1: usize, col2: usize) -> bool {
-    map.map
+fn find_reflections<T>(lines: &[T]) -> Option<usize>
+where
+    T: Clone + PartialEq + Eq,
+{
+    lines
         .iter()
-        .map(|row| (row[col1], row[col2]))
-        .all(|(a, b)| a == b)
+        .enumerate()
+        .tuple_windows()
+        .filter(|((_, a), (_, b))| a == b)
+        .find_map(|((idx_a, _), (idx_b, _))| {
+            let prev_lines = lines[..idx_a].iter().rev();
+            let next_lines = lines[idx_b + 1..].iter();
+
+            prev_lines
+                .zip(next_lines)
+                .all(|(prev, next)| prev == next)
+                .then_some(idx_a + 1)
+        })
 }
 
-fn count_reflected_columns(map: &Map) -> usize {
-    for cols in 0..map.width - 1 {
-        if compare_columns(map, cols, cols + 1) {
-            let mut is_reflected = true;
+fn vertical_reflections(input: &str) -> Option<Reflection> {
+    let lines =
+        advent_of_code::transpose(input.lines().map(|line| line.chars().collect()).collect());
 
-            for check_col in 0..=cols {
-                if cols + check_col + 1 > map.width - 1 {
-                    break;
-                }
-                if !compare_columns(map, cols - check_col, cols + check_col + 1) {
-                    is_reflected = false;
-                    break;
-                }
-            }
-            if is_reflected {
-                return cols + 1;
-            }
-        }
-    }
-
-    0
+    find_reflections(&lines).map(|len| Reflection::Vertical(len))
 }
 
-fn compare_rows(map: &Map, row1: usize, row2: usize) -> bool {
-    map.map[row1]
-        .iter()
-        .zip(map.map[row2].iter())
-        .all(|(a, b)| a == b)
+fn horizontal_reflections(input: &str) -> Option<Reflection> {
+    let lines: Vec<&str> = input.lines().collect();
+
+    find_reflections(&lines).map(|len| Reflection::Horizontal(len))
 }
 
-fn count_reflected_rows(map: &Map) -> usize {
-    for rows in 0..map.height - 1 {
-        if compare_rows(map, rows, rows + 1) {
-            let mut is_reflected = true;
-
-            for check_row in 0..=rows {
-                if rows + check_row + 1 > map.height - 1 {
-                    break;
-                }
-
-                if !compare_rows(map, rows - check_row, rows + check_row + 1) {
-                    is_reflected = false;
-                    break;
-                }
-            }
-            if is_reflected {
-                return rows + 1;
-            }
-        }
-    }
-
-    0
+fn reflections(input: &str) -> Option<Reflection> {
+    vertical_reflections(input).or_else(|| horizontal_reflections(input))
 }
 
 pub fn part_one(input: &str) -> Option<usize> {
-    let map = parse(input);
+    let (horizontal, vertical) = input
+        .replace("\r\n", "\n")
+        .split("\n\n")
+        .flat_map(reflections)
+        .fold((0, 0), |mut acc, item| match item {
+            Reflection::Horizontal(len) => {
+                acc.0 += len * 100;
+                acc
+            }
+            Reflection::Vertical(len) => {
+                acc.1 += len;
+                acc
+            }
+        });
 
-    let mirror_summary = map
-        .iter()
-        .map(|map| (count_reflected_rows(map) * 100) + count_reflected_columns(map))
-        .sum::<usize>();
-
-    Some(mirror_summary)
+    Some(horizontal + vertical)
 }
 
 pub fn part_two(_input: &str) -> Option<u32> {
@@ -114,127 +73,21 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_count_reflected_columns() {
-        let map = Map::new(vec![
-            vec!['#', '.', '#', '#', '.', '.', '#', '#', '.'],
-            vec!['.', '.', '#', '.', '#', '#', '.', '#', '.'],
-            vec!['#', '#', '.', '.', '.', '.', '.', '.', '#'],
-            vec!['#', '#', '.', '.', '.', '.', '.', '.', '#'],
-            vec!['.', '.', '#', '.', '#', '#', '.', '#', '.'],
-            vec!['.', '.', '#', '#', '.', '.', '#', '#', '.'],
-            vec!['#', '.', '#', '.', '#', '#', '.', '#', '.'],
-        ]);
+    fn test_horizontal_fold() {
+        let result = horizontal_reflections(&advent_of_code::template::read_file_part(
+            "examples", DAY, 2,
+        ));
 
-        assert_eq!(count_reflected_rows(&map), 0);
-
-        assert_eq!(count_reflected_columns(&map), 5);
+        assert_eq!(result, Some(Reflection::Horizontal(4)));
     }
 
     #[test]
-    fn test_count_reflected_rows() {
-        let map = Map::new(vec![
-            vec!['#', '.', '.', '.', '#', '#', '.', '.', '#'],
-            vec!['#', '.', '.', '.', '.', '#', '.', '.', '#'],
-            vec!['.', '.', '#', '#', '.', '.', '#', '#', '#'],
-            vec!['#', '#', '#', '#', '#', '.', '#', '#', '.'],
-            vec!['#', '#', '#', '#', '#', '.', '#', '#', '.'],
-            vec!['.', '.', '#', '#', '.', '.', '#', '#', '#'],
-            vec!['#', '.', '.', '.', '.', '#', '.', '.', '#'],
-        ]);
+    fn test_vertical_fold() {
+        let result = vertical_reflections(&advent_of_code::template::read_file_part(
+            "examples", DAY, 1,
+        ));
 
-        assert_eq!(count_reflected_rows(&map), 4);
-
-        assert_eq!(count_reflected_columns(&map), 0);
-    }
-
-    #[test]
-    fn test_count_reflections() {
-        let map = Map::new(vec![
-            vec![
-                '#', '.', '.', '.', '#', '#', '.', '.', '#', '#', '.', '.', '.', '#', '#',
-            ],
-            vec![
-                '.', '#', '.', '.', '.', '#', '#', '#', '#', '.', '.', '.', '#', '.', '#',
-            ],
-            vec![
-                '.', '#', '.', '#', '#', '#', '#', '#', '#', '#', '#', '.', '#', '.', '.',
-            ],
-            vec![
-                '#', '#', '#', '#', '#', '#', '.', '.', '#', '#', '#', '#', '#', '#', '#',
-            ],
-            vec![
-                '.', '.', '.', '#', '#', '#', '#', '#', '#', '#', '#', '.', '.', '.', '#',
-            ],
-            vec![
-                '#', '.', '#', '#', '#', '.', '.', '.', '.', '#', '#', '#', '.', '#', '#',
-            ],
-            vec![
-                '.', '.', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '.', '.', '#',
-            ],
-            vec![
-                '.', '.', '.', '.', '#', '.', '.', '.', '.', '#', '.', '.', '.', '.', '.',
-            ],
-            vec![
-                '.', '#', '.', '.', '.', '#', '.', '.', '#', '.', '.', '.', '#', '.', '.',
-            ],
-            vec![
-                '#', '.', '#', '.', '.', '#', '.', '.', '#', '.', '.', '#', '.', '.', '.',
-            ],
-            vec![
-                '.', '#', '.', '.', '#', '#', '.', '.', '#', '#', '.', '.', '#', '.', '.',
-            ],
-            vec![
-                '#', '.', '.', '.', '.', '#', '#', '#', '#', '.', '.', '.', '.', '#', '#',
-            ],
-            vec![
-                '#', '.', '.', '.', '.', '#', '#', '#', '#', '.', '.', '.', '.', '#', '#',
-            ],
-        ]);
-
-        assert_eq!(count_reflected_rows(&map), 12);
-
-        assert_eq!(count_reflected_columns(&map), 0);
-    }
-
-    #[test]
-    fn test_count_reflected_columns2() {
-        let map = Map::new(vec![
-            vec![
-                '#', '#', '.', '.', '.', '.', '#', '.', '.', '.', '.', '.', '.', '.', '.',
-            ],
-            vec![
-                '#', '#', '.', '#', '.', '#', '#', '#', '#', '.', '.', '.', '.', '#', '#',
-            ],
-            vec![
-                '.', '.', '#', '.', '.', '.', '#', '#', '.', '#', '.', '.', '#', '.', '#',
-            ],
-            vec![
-                '.', '.', '.', '.', '#', '.', '#', '.', '.', '.', '.', '.', '.', '.', '.',
-            ],
-            vec![
-                '#', '#', '.', '.', '#', '.', '.', '#', '#', '#', '.', '.', '#', '#', '#',
-            ],
-            vec![
-                '#', '#', '.', '#', '.', '.', '#', '#', '.', '.', '#', '#', '.', '.', '#',
-            ],
-            vec![
-                '.', '.', '#', '#', '#', '#', '#', '.', '.', '.', '.', '.', '.', '.', '.',
-            ],
-            vec![
-                '.', '.', '#', '#', '.', '.', '#', '#', '#', '#', '.', '.', '#', '#', '#',
-            ],
-            vec![
-                '#', '.', '#', '.', '.', '.', '#', '#', '.', '#', '#', '#', '#', '.', '#',
-            ],
-            vec![
-                '#', '#', '#', '#', '.', '#', '#', '.', '#', '#', '#', '#', '#', '#', '.',
-            ],
-            vec![
-                '#', '#', '#', '#', '#', '#', '#', '.', '.', '#', '#', '#', '#', '.', '.',
-            ],
-        ]);
-
-        assert_eq!(count_reflected_columns(&map), 11);
+        assert_eq!(result, Some(Reflection::Vertical(5)));
     }
 
     #[test]
