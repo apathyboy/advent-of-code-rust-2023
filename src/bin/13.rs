@@ -34,13 +34,10 @@ fn parse(input: &str) -> Vec<Map> {
 }
 
 fn compare_columns(map: &Map, col1: usize, col2: usize) -> bool {
-    for rows in 0..map.height {
-        if map.map[rows][col1] != map.map[rows][col2] {
-            return false;
-        }
-    }
-
-    true
+    map.map
+        .iter()
+        .map(|row| (row[col1], row[col2]))
+        .all(|(a, b)| a == b)
 }
 
 fn count_reflected_columns(map: &Map) -> usize {
@@ -67,13 +64,10 @@ fn count_reflected_columns(map: &Map) -> usize {
 }
 
 fn compare_rows(map: &Map, row1: usize, row2: usize) -> bool {
-    for cols in 0..map.width {
-        if map.map[row1][cols] != map.map[row2][cols] {
-            return false;
-        }
-    }
-
-    true
+    map.map[row1]
+        .iter()
+        .zip(map.map[row2].iter())
+        .all(|(a, b)| a == b)
 }
 
 fn count_reflected_rows(map: &Map) -> usize {
