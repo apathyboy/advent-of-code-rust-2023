@@ -47,7 +47,7 @@ fn explore(map: &[Vec<char>], starting_beam: &Beam) -> u32 {
         while idx < beams.len() {
             let beam = &mut beams[idx];
 
-            beam.position = beam.position.add(&beam.direction);
+            beam.position = beam.position.add(beam.direction);
 
             if beam.position.x as usize >= map.len()
                 || beam.position.y as usize >= map[beam.position.x as usize].len()

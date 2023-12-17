@@ -32,13 +32,13 @@ fn vertical_reflections(input: &str) -> Option<Reflection> {
     let lines =
         advent_of_code::transpose(input.lines().map(|line| line.chars().collect()).collect());
 
-    find_reflections(&lines).map(|len| Reflection::Vertical(len))
+    find_reflections(&lines).map(Reflection::Vertical)
 }
 
 fn horizontal_reflections(input: &str) -> Option<Reflection> {
     let lines: Vec<&str> = input.lines().collect();
 
-    find_reflections(&lines).map(|len| Reflection::Horizontal(len))
+    find_reflections(&lines).map(Reflection::Horizontal)
 }
 
 fn reflections(input: &str) -> Option<Reflection> {
