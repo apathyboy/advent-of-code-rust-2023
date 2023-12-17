@@ -13,17 +13,10 @@ fn find_reflections_with_smudge(lines: &[Vec<char>]) -> Option<usize> {
         .iter()
         .enumerate()
         .tuple_windows()
-        .filter(|((_, a), (_, b))| {
-            a == b
-                || a.into_iter()
-                    .zip(b.into_iter())
-                    .filter(|(a, b)| a != b)
-                    .count()
-                    <= 1
-        })
+        .filter(|((_, a), (_, b))| a.iter().zip(b.iter()).filter(|(a, b)| a != b).count() <= 1)
         .find_map(|((idx_a, _), (idx_b, _))| {
-            let prev_lines = lines[..idx_a].iter().rev();
-            let next_lines = lines[idx_b + 1..].iter();
+            let prev_lines = lines[..=idx_a].iter().rev();
+            let next_lines = lines[idx_b..].iter();
 
             (prev_lines
                 .flatten()
@@ -135,6 +128,24 @@ mod tests {
         ));
 
         assert_eq!(result, Some(Reflection::Horizontal(4)));
+    }
+
+    #[test]
+    fn test_horizontal_fold_with_smudge() {
+        let result = horizontal_reflections_with_smudge(&advent_of_code::template::read_file_part(
+            "examples", DAY, 1,
+        ));
+
+        assert_eq!(result, Some(Reflection::Horizontal(3)));
+    }
+
+    #[test]
+    fn test_horizontal_fold_with_smudge_2() {
+        let result = horizontal_reflections_with_smudge(&advent_of_code::template::read_file_part(
+            "examples", DAY, 2,
+        ));
+
+        assert_eq!(result, Some(Reflection::Horizontal(1)));
     }
 
     #[test]
