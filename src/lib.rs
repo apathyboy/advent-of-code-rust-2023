@@ -24,6 +24,13 @@ impl Point2D {
             y: self.y + other.y,
         }
     }
+
+    pub fn mul_scalar(&self, scalar: isize) -> Self {
+        Self {
+            x: self.x * scalar,
+            y: self.y * scalar,
+        }
+    }
 }
 
 pub fn parse_space_separated<T>(s: &str) -> Vec<T>
