@@ -2,10 +2,36 @@ use advent_of_code::Point2D;
 
 advent_of_code::solution!(18);
 
+fn parse_part_one(line: &str) -> (Point2D, usize) {
+    let mut parts = line.split(' ');
+    let direction = parts.next().unwrap();
+    let distance = parts.next().unwrap().parse::<isize>().unwrap();
+    let offset = match direction {
+        "R" => Point2D::new(distance, 0),
+        "L" => Point2D::new(-distance, 0),
+        "U" => Point2D::new(0, -distance),
+        "D" => Point2D::new(0, distance),
+        _ => panic!("Unknown direction {}", direction),
+    };
+
+    (offset, distance as usize)
+}
+
+fn parse_part_two(line: &str) -> (Point2D, usize) {
+    let color = line.split(' ').nth(2).unwrap();
+    let (direction, distance) = parse_color(color);
+    let offset = match direction {
+        0 => Point2D::new(distance, 0),
+        2 => Point2D::new(-distance, 0),
+        3 => Point2D::new(0, -distance),
+        1 => Point2D::new(0, distance),
+        _ => panic!("Unknown direction {}", direction),
+    };
+
+    (offset, distance as usize)
+}
+
 fn parse_color(color: &str) -> (isize, isize) {
-    // remove the # and the parens
-    // take the first 5 characters and convert from hex to decimal
-    // take the last character and convert from hex to decimal
     let color = &color[2..color.len() - 1];
 
     let (dist, dir) = color.split_at(5);
@@ -15,7 +41,7 @@ fn parse_color(color: &str) -> (isize, isize) {
     (dir, dist)
 }
 
-fn polygon_area(points: &[Point2D]) -> isize {
+fn polygon_area(points: &[Point2D], perimeter_length: usize) -> usize {
     let mut sum1 = 0;
     let mut sum2 = 0;
 
@@ -27,78 +53,49 @@ fn polygon_area(points: &[Point2D]) -> isize {
         sum2 += p1.y * p2.x;
     }
 
-    (sum1 - sum2).abs() / 2
+    ((perimeter_length / 2) + 1) + ((sum1 - sum2).unsigned_abs() / 2)
 }
 
-pub fn part_one(input: &str) -> Option<u32> {
-    // map of y to min_x and max_x
-    let mut outline: Vec<Point2D> = Vec::new();
-    let mut outline_length = 0;
+pub fn part_one(input: &str) -> Option<usize> {
+    let (perimeter, perimeter_lengths): (Vec<_>, Vec<_>) = input
+        .lines()
+        .map(parse_part_one)
+        .scan(
+            (Point2D::new(0, 0), 0),
+            |(pos, perimeter_length), (offset, distance)| {
+                *pos = pos.add(&offset);
+                *perimeter_length += distance;
 
-    let mut pos = Point2D::new(0, 0);
+                Some((*pos, *perimeter_length))
+            },
+        )
+        .unzip();
 
-    for line in input.lines() {
-        let mut parts = line.split(' ');
-        let direction = parts.next().unwrap();
-        let distance = parts.next().unwrap().parse::<isize>().unwrap();
-
-        outline_length += distance;
-
-        match direction {
-            "R" => {
-                pos.x += distance;
-            }
-            "L" => {
-                pos.x -= distance;
-            }
-            "U" => {
-                pos.y -= distance;
-            }
-            "D" => {
-                pos.y += distance;
-            }
-            _ => panic!("Unknown direction {}", direction),
-        }
-        outline.push(pos);
-    }
-
-    Some((((outline_length / 2) + 1) + polygon_area(&outline)) as u32)
+    Some(polygon_area(
+        &perimeter,
+        perimeter_lengths[perimeter_lengths.len() - 1],
+    ))
 }
 
-pub fn part_two(input: &str) -> Option<u64> {
-    // map of y to min_x and max_x
-    let mut outline: Vec<Point2D> = Vec::new();
-    let mut outline_length = 0;
+pub fn part_two(input: &str) -> Option<usize> {
+    let (perimeter, perimeter_lengths): (Vec<_>, Vec<_>) = input
+        .lines()
+        .map(parse_part_two)
+        .scan(
+            (Point2D::new(0, 0), 0),
+            |(pos, perimeter_length), (offset, distance)| {
+                *pos = pos.add(&offset);
+                *perimeter_length += distance;
 
-    let mut pos = Point2D::new(0, 0);
+                Some((*pos, *perimeter_length))
+            },
+        )
+        .unzip();
 
-    for line in input.lines() {
-        let mut parts = line.split(' ');
-        let color = parts.nth(2).unwrap();
-
-        let (direction, distance) = parse_color(color);
-
-        outline_length += distance;
-
-        match direction {
-            0 => {
-                pos.x += distance;
-            }
-            2 => {
-                pos.x -= distance;
-            }
-            3 => {
-                pos.y -= distance;
-            }
-            1 => {
-                pos.y += distance;
-            }
-            _ => panic!("Unknown direction {}", direction),
-        }
-        outline.push(pos);
-    }
-
-    Some((((outline_length / 2) + 1) + polygon_area(&outline)) as u64)
+    Some(polygon_area(
+        &perimeter,
+        perimeter_lengths[perimeter_lengths.len() - 1],
+    ))
 }
 
 #[cfg(test)]
