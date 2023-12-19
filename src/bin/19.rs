@@ -118,9 +118,9 @@ fn parse_part(part: &str) -> Part {
 
 pub fn part_one(input: &str) -> Option<u32> {
     let binding = input.replace("\r\n", "\n");
-    let (rules, parts) = binding.split_once("\n\n").unwrap();
+    let (workflows, parts) = binding.split_once("\n\n").unwrap();
 
-    let workflows: HashMap<_, _> = rules.lines().map(parse_workflow).collect();
+    let workflows: HashMap<_, _> = workflows.lines().map(parse_workflow).collect();
     let parts: Vec<Part> = parts.lines().map(parse_part).collect();
 
     let sum_ratings = parts
@@ -137,7 +137,27 @@ pub fn part_one(input: &str) -> Option<u32> {
     Some(sum_ratings)
 }
 
-pub fn part_two(_input: &str) -> Option<u32> {
+pub fn part_two(input: &str) -> Option<u32> {
+    let binding = input.replace("\r\n", "\n");
+    let (workflows, _) = binding.split_once("\n\n").unwrap();
+
+    let workflows: HashMap<_, _> = workflows.lines().map(parse_workflow).collect();
+
+    // start with a potential part with ranges of 0..=4000 for each attribute (x, m, a, s)
+    // then start at the workflow "in" and follow the rules until we reach "A" or "R"
+    // branch the potential part at each rule, limitng the ranges of the attributes based on the condition
+    // if we reach "A" then we have a valid part, if we reach "R" then we have an invalid part
+    // if we reach a rule that has no condition, then we branch the potential part into two parts
+    // one part with the rule's target and one part without the rule's target
+    // we continue until we have no more rules to follow
+    // then we count all potential rules that have "A" as a target
+
+    let mut potential_parts: Vec<(u32, u32)> = vec![(0, 4000), (0, 4000), (0, 4000), (0, 4000)];
+    let mut valid_parts: Vec<(u32, u32)> = vec![];
+
+    let mut rules = workflows.get("in").unwrap().iter();
+    let mut rule = rules.next().unwrap();
+
     None
 }
 
