@@ -35,25 +35,26 @@ Solutions for [Advent of Code](https://adventofcode.com/) in [Rust](https://www.
 
 | Day | Part 1 | Part 2 |
 | :---: | :---: | :---:  |
-| [Day 1](./src/bin/01.rs) | `68.1µs` | `566.7µs` |
-| [Day 2](./src/bin/02.rs) | `31.4µs` | `30.7µs` |
-| [Day 3](./src/bin/03.rs) | `49.6µs` | `135.4µs` |
-| [Day 4](./src/bin/04.rs) | `128.4µs` | `128.1µs` |
-| [Day 5](./src/bin/05.rs) | `28.1µs` | `49.4µs` |
-| [Day 6](./src/bin/06.rs) | `285.0ns` | `342.0ns` |
-| [Day 7](./src/bin/07.rs) | `214.1µs` | `195.5µs` |
-| [Day 8](./src/bin/08.rs) | `373.6µs` | `621.6µs` |
-| [Day 9](./src/bin/09.rs) | `131.5µs` | `132.4µs` |
-| [Day 10](./src/bin/10.rs) | `97.1ms` | `170.9ms` |
-| [Day 11](./src/bin/11.rs) | `6.1ms` | `6.1ms` |
-| [Day 12](./src/bin/12.rs) | `327.2µs` | `1.3ms` |
-| [Day 13](./src/bin/13.rs) | `247.8µs` | `254.5µs` |
-| [Day 14](./src/bin/14.rs) | `50.4µs` | `159.9ms` |
-| [Day 15](./src/bin/15.rs) | `55.8µs` | `303.0µs` |
-| [Day 16](./src/bin/16.rs) | `1.8ms` | `68.1ms` |
-| [Day 17](./src/bin/17.rs) | `38.4ms` | `61.9ms` |
+| [Day 1](./src/bin/01.rs) | `65.1µs` | `577.7µs` |
+| [Day 2](./src/bin/02.rs) | `31.4µs` | `30.8µs` |
+| [Day 3](./src/bin/03.rs) | `49.1µs` | `136.5µs` |
+| [Day 4](./src/bin/04.rs) | `127.9µs` | `127.7µs` |
+| [Day 5](./src/bin/05.rs) | `28.0µs` | `50.8µs` |
+| [Day 6](./src/bin/06.rs) | `218.0ns` | `257.0ns` |
+| [Day 7](./src/bin/07.rs) | `217.7µs` | `218.5µs` |
+| [Day 8](./src/bin/08.rs) | `365.9µs` | `621.7µs` |
+| [Day 9](./src/bin/09.rs) | `131.3µs` | `135.1µs` |
+| [Day 10](./src/bin/10.rs) | `97.1ms` | `169.7ms` |
+| [Day 11](./src/bin/11.rs) | `6.1ms` | `6.2ms` |
+| [Day 12](./src/bin/12.rs) | `309.8µs` | `1.3ms` |
+| [Day 13](./src/bin/13.rs) | `247.2µs` | `250.2µs` |
+| [Day 14](./src/bin/14.rs) | `48.4µs` | `157.6ms` |
+| [Day 15](./src/bin/15.rs) | `55.6µs` | `302.5µs` |
+| [Day 16](./src/bin/16.rs) | `1.7ms` | `68.1ms` |
+| [Day 17](./src/bin/17.rs) | `38.6ms` | `62.6ms` |
 | [Day 18](./src/bin/18.rs) | `22.3µs` | `41.4µs` |
+| [Day 19](./src/bin/19.rs) | `241.6µs` | `-` |
 
-**Total: 615.79ms**
+**Total: 613.43ms**
 <!--- benchmarking table --->
 *Benchmarks performed on a 2021 M1 Macbook Pro, 16GB*
