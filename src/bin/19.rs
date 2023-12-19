@@ -1,4 +1,7 @@
-use std::collections::HashMap;
+use std::{
+    cmp::{max, min},
+    collections::HashMap,
+};
 
 advent_of_code::solution!(19);
 
@@ -98,6 +101,82 @@ fn is_accepted(workflows: &HashMap<String, Vec<Rule>>, part: &Part) -> bool {
     }
 }
 
+fn process(
+    workflows: &HashMap<String, Vec<Rule>>,
+    potential_parts: &mut Vec<(u32, u32)>,
+    target_workflow: &str,
+) -> Option<u64> {
+    let mut product = 0;
+    let workflow = workflows.get(target_workflow).unwrap();
+
+    // potential parts is a vector of tuples of (min, max) for each part element
+    // we need to iterate over each rule in the workflow, and for each rule, we need to
+    // trim the potential parts to the new range
+
+    // if a target is A we need to multiply the diff between the min and max of the
+    // potential part elements and the accumulated product and return it
+
+    // if a target is R we need to return None
+
+    // if the target is a workflow, we need to recurse and multiply the product by the result if it exists
+
+    for rule in workflow.iter() {
+        let mut partition_1 = potential_parts.clone();
+        let mut partition_2 = potential_parts.clone();
+
+        if let Some(condition) = &rule.condition {
+            let lhs = match condition.lhs.as_str() {
+                "x" => 0,
+                "m" => 1,
+                "a" => 2,
+                "s" => 3,
+                _ => unreachable!(),
+            };
+            let rhs = condition.rhs;
+            let operator = condition.operator;
+            match operator {
+                '<' => {
+                    partition_1[lhs].1 = min(partition_1[lhs].1, rhs - 1);
+                    partition_2[lhs].0 = max(partition_2[lhs].0, rhs);
+                }
+                '>' => {
+                    partition_1[lhs].0 = max(partition_1[lhs].0, rhs + 1);
+                    partition_2[lhs].1 = min(partition_2[lhs].1, rhs);
+                }
+                _ => unreachable!(),
+            };
+        }
+
+        if partition_1.iter().all(|(min, max)| min < max) {
+            match rule.target.as_str() {
+                "A" => {
+                    let res = partition_1
+                        .iter()
+                        .map(|(min, max)| ((max - min) as u64) + 1)
+                        .product::<u64>();
+
+                    product += res;
+                }
+                "R" => (),
+                _ => {
+                    let result = process(workflows, &mut partition_1, &rule.target);
+                    if let Some(result) = result {
+                        product += result;
+                    }
+                }
+            }
+        }
+
+        if partition_2.iter().any(|(min, max)| min > max) {
+            break;
+        }
+
+        *potential_parts = partition_2;
+    }
+
+    Some(product)
+}
+
 fn parse_part(part: &str) -> Part {
     let (x, m, a, s) = part[1..part.len() - 1]
         .split_once(',')
@@ -137,28 +216,14 @@ pub fn part_one(input: &str) -> Option<u32> {
     Some(sum_ratings)
 }
 
-pub fn part_two(input: &str) -> Option<u32> {
+pub fn part_two(input: &str) -> Option<u64> {
     let binding = input.replace("\r\n", "\n");
     let (workflows, _) = binding.split_once("\n\n").unwrap();
 
     let workflows: HashMap<_, _> = workflows.lines().map(parse_workflow).collect();
+    let mut potential_parts = vec![(1, 4000), (1, 4000), (1, 4000), (1, 4000)];
 
-    // start with a potential part with ranges of 0..=4000 for each attribute (x, m, a, s)
-    // then start at the workflow "in" and follow the rules until we reach "A" or "R"
-    // branch the potential part at each rule, limitng the ranges of the attributes based on the condition
-    // if we reach "A" then we have a valid part, if we reach "R" then we have an invalid part
-    // if we reach a rule that has no condition, then we branch the potential part into two parts
-    // one part with the rule's target and one part without the rule's target
-    // we continue until we have no more rules to follow
-    // then we count all potential rules that have "A" as a target
-
-    let mut potential_parts: Vec<(u32, u32)> = vec![(0, 4000), (0, 4000), (0, 4000), (0, 4000)];
-    let mut valid_parts: Vec<(u32, u32)> = vec![];
-
-    let mut rules = workflows.get("in").unwrap().iter();
-    let mut rule = rules.next().unwrap();
-
-    None
+    process(&workflows, &mut potential_parts, "in")
 }
 
 #[cfg(test)]
@@ -254,6 +319,6 @@ mod tests {
     #[test]
     fn test_part_two() {
         let result = part_two(&advent_of_code::template::read_file("examples", DAY));
-        assert_eq!(result, None);
+        assert_eq!(result, Some(167409079868000));
     }
 }
