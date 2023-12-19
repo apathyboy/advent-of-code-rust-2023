@@ -1,15 +1,12 @@
 advent_of_code::solution!(1);
 
-fn calculate_calibration_value(input: &str) -> Option<u32> {
+fn calculate_calibration_value(input: &str) -> u32 {
     let nums: Vec<u32> = input.chars().filter_map(|c| c.to_digit(10)).collect();
 
-    let first_digit = nums.first().expect("Expect at least one valid digit");
-    let last_digit = nums.last().expect("Expect at least one valid digit");
-
-    Some(first_digit * 10 + last_digit)
+    nums[0] * 10 + nums[nums.len() - 1]
 }
 
-fn calculate_real_calibration_value(input: &str) -> Option<u32> {
+fn calculate_real_calibration_value(input: &str) -> u32 {
     let number_words = [
         ("zero", 0_u32),
         ("one", 1),
@@ -40,18 +37,15 @@ fn calculate_real_calibration_value(input: &str) -> Option<u32> {
         })
         .collect();
 
-    let first_digit = nums.first().expect("Expect at least one valid digit");
-    let last_digit = nums.last().expect("Expect at least one valid digit");
-
-    Some(first_digit * 10 + last_digit)
+    nums[0] * 10 + nums[nums.len() - 1]
 }
 
 pub fn part_one(input: &str) -> Option<u32> {
-    input.lines().map(calculate_calibration_value).sum()
+    Some(input.lines().map(calculate_calibration_value).sum())
 }
 
 pub fn part_two(input: &str) -> Option<u32> {
-    input.lines().map(calculate_real_calibration_value).sum()
+    Some(input.lines().map(calculate_real_calibration_value).sum())
 }
 
 #[cfg(test)]
