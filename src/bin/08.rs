@@ -75,15 +75,15 @@ pub fn part_two(input: &str) -> Option<u64> {
 
     let keys: Vec<&u32> = map.keys().collect();
 
-    let tmp = keys
+    let steps = keys
         .into_par_iter()
         .filter_map(|k| match ends_with(*k, b'A') {
             true => traverse(&map, directions, *k, |c| ends_with(c, b'Z')),
             false => None,
         })
-        .collect::<Vec<u64>>();
+        .reduce(|| 1, lcm);
 
-    tmp.into_iter().reduce(lcm)
+    Some(steps)
 }
 
 #[cfg(test)]
