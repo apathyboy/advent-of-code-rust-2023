@@ -1,4 +1,5 @@
 use num_integer::lcm;
+use rayon::prelude::*;
 use regex::Regex;
 use std::collections::{HashMap, VecDeque};
 
@@ -288,34 +289,21 @@ pub fn part_two(input: &str) -> Option<usize> {
         }
     }
 
-    let mut cl_counter = 1;
-    let mut cl_modules = modules.clone();
-    let mut rp_counter = 1;
-    let mut rp_modules = modules.clone();
-    let mut lb_counter = 1;
-    let mut lb_modules = modules.clone();
-    let mut nj_counter = 1;
-    let mut nj_modules = modules.clone();
+    let tmp = ["cl", "rp", "lb", "nj"]
+        .into_par_iter()
+        .map(|id| {
+            let mut counter: usize = 1;
+            let mut modules = modules.clone();
 
-    while !press_button2(&mut cl_modules, "cl") {
-        cl_counter += 1;
-    }
-    while !press_button2(&mut rp_modules, "rp") {
-        rp_counter += 1;
-    }
-    while !press_button2(&mut lb_modules, "lb") {
-        lb_counter += 1;
-    }
-    while !press_button2(&mut nj_modules, "nj") {
-        nj_counter += 1;
-    }
+            while !press_button2(&mut modules, id) {
+                counter += 1;
+            }
 
-    // dbg!(cl_counter, rp_counter, lb_counter, nj_counter);
+            counter
+        })
+        .collect::<Vec<usize>>();
 
-    Some(lcm(
-        lcm(cl_counter, rp_counter),
-        lcm(lb_counter, nj_counter),
-    ))
+    tmp.into_iter().reduce(lcm)
 }
 
 #[cfg(test)]
