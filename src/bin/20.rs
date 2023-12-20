@@ -1,6 +1,6 @@
-use std::collections::{HashMap, VecDeque};
-
+use num_integer::lcm;
 use regex::Regex;
+use std::collections::{HashMap, VecDeque};
 
 advent_of_code::solution!(20);
 
@@ -10,7 +10,7 @@ enum Pulse {
     Low,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum CommsModule {
     FlipFlop {
         on_off: bool,
@@ -179,6 +179,29 @@ fn press_button(modules: &mut HashMap<String, CommsModule>) -> (usize, usize) {
     (low_counter, high_counter)
 }
 
+fn press_button2(modules: &mut HashMap<String, CommsModule>, check: &str) -> bool {
+    let mut signals =
+        VecDeque::from([("button".to_string(), "broadcaster".to_string(), Pulse::Low)]);
+
+    while !signals.is_empty() {
+        let (from, to, pulse) = signals.pop_front().unwrap();
+
+        if from == check && to == "lx" && pulse == Pulse::High {
+            return true;
+        }
+
+        if !modules.contains_key(to.as_str()) {
+            continue;
+        }
+
+        let module = modules.get_mut(to.as_str()).unwrap();
+
+        module.signal(&from, &mut signals, pulse);
+    }
+
+    false
+}
+
 pub fn part_one(input: &str) -> Option<usize> {
     let mut modules: HashMap<_, _> = input
         .lines()
@@ -229,8 +252,70 @@ pub fn part_one(input: &str) -> Option<usize> {
     Some(lows * highs)
 }
 
-pub fn part_two(_input: &str) -> Option<u32> {
-    None
+pub fn part_two(input: &str) -> Option<usize> {
+    let mut modules: HashMap<_, _> = input
+        .lines()
+        .map(|line| {
+            let (id, module) = parse_module(line);
+            (id, module)
+        })
+        .collect();
+
+    let mut conjunctions: Vec<(String, Vec<String>)> = Vec::new();
+
+    for (id, module) in modules.iter() {
+        if matches!(module, CommsModule::Conjunction { .. }) {
+            let inputs: Vec<String> = modules
+                .iter()
+                .filter(|(_, m)| m.has_destination(id))
+                .map(|(id, _)| id.clone())
+                .collect();
+
+            conjunctions.push((id.clone(), inputs));
+        }
+    }
+
+    for (id, new_inputs) in conjunctions {
+        match modules.get_mut(&id).unwrap() {
+            CommsModule::Conjunction { inputs, .. } => {
+                inputs.extend(
+                    new_inputs
+                        .iter()
+                        .map(|id: &String| (id.clone(), Pulse::Low)),
+                );
+            }
+            _ => panic!("Expected conjunction"),
+        }
+    }
+
+    let mut cl_counter = 1;
+    let mut cl_modules = modules.clone();
+    let mut rp_counter = 1;
+    let mut rp_modules = modules.clone();
+    let mut lb_counter = 1;
+    let mut lb_modules = modules.clone();
+    let mut nj_counter = 1;
+    let mut nj_modules = modules.clone();
+
+    while !press_button2(&mut cl_modules, "cl") {
+        cl_counter += 1;
+    }
+    while !press_button2(&mut rp_modules, "rp") {
+        rp_counter += 1;
+    }
+    while !press_button2(&mut lb_modules, "lb") {
+        lb_counter += 1;
+    }
+    while !press_button2(&mut nj_modules, "nj") {
+        nj_counter += 1;
+    }
+
+    // dbg!(cl_counter, rp_counter, lb_counter, nj_counter);
+
+    Some(lcm(
+        lcm(cl_counter, rp_counter),
+        lcm(lb_counter, nj_counter),
+    ))
 }
 
 #[cfg(test)]
