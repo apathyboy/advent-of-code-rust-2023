@@ -64,6 +64,24 @@ fn parse_workflow(workflow: &str) -> (String, Vec<Rule>) {
     (label, rules)
 }
 
+fn parse_part(part: &str) -> Part {
+    let (x, m, a, s) = part[1..part.len() - 1]
+        .split_once(',')
+        .map(|(x, rest)| {
+            let (m, rest) = rest.split_once(',').unwrap();
+            let (a, s) = rest.split_once(',').unwrap();
+            (x, m, a, s)
+        })
+        .unwrap();
+
+    Part {
+        x: x[2..x.len()].parse().unwrap(),
+        m: m[2..m.len()].parse().unwrap(),
+        a: a[2..a.len()].parse().unwrap(),
+        s: s[2..s.len()].parse().unwrap(),
+    }
+}
+
 fn is_accepted(workflows: &HashMap<String, Vec<Rule>>, part: &Part) -> bool {
     let mut rules = workflows.get("in").unwrap().iter();
     let mut rule = rules.next().unwrap();
@@ -107,7 +125,7 @@ fn process(
     let mut product = 0;
     let workflow = workflows.get(target_workflow).unwrap();
 
-    for rule in workflow.iter() {
+    workflow.iter().for_each(|rule| {
         let mut partition_1 = potential_parts.to_owned();
 
         if let Some(condition) = &rule.condition {
@@ -118,78 +136,48 @@ fn process(
                 's' => 3,
                 _ => unreachable!(),
             };
-            let rhs = condition.rhs;
-            let operator = condition.operator;
-            match operator {
+
+            match condition.operator {
                 '<' => {
-                    partition_1[lhs].1 = min(partition_1[lhs].1, rhs - 1);
-                    potential_parts[lhs].0 = max(potential_parts[lhs].0, rhs);
+                    partition_1[lhs].1 = min(partition_1[lhs].1, condition.rhs - 1);
+                    potential_parts[lhs].0 = max(potential_parts[lhs].0, condition.rhs);
                 }
                 '>' => {
-                    partition_1[lhs].0 = max(partition_1[lhs].0, rhs + 1);
-                    potential_parts[lhs].1 = min(potential_parts[lhs].1, rhs);
+                    partition_1[lhs].0 = max(partition_1[lhs].0, condition.rhs + 1);
+                    potential_parts[lhs].1 = min(potential_parts[lhs].1, condition.rhs);
                 }
                 _ => unreachable!(),
             };
         }
 
-        if partition_1.iter().all(|(min, max)| min < max) {
-            match rule.target.as_str() {
-                "A" => {
-                    let res = partition_1
-                        .iter()
-                        .map(|(min, max)| ((max - min) as u64) + 1)
-                        .product::<u64>();
-
-                    product += res;
-                }
-                "R" => (),
-                _ => {
-                    let result = process(workflows, &mut partition_1, &rule.target);
-                    if let Some(result) = result {
-                        product += result;
-                    }
+        match rule.target.as_str() {
+            "A" => {
+                product += partition_1
+                    .iter()
+                    .map(|(min, max)| ((max - min) as u64) + 1)
+                    .product::<u64>();
+            }
+            "R" => (),
+            _ => {
+                if let Some(result) = process(workflows, &mut partition_1, &rule.target) {
+                    product += result;
                 }
             }
         }
-
-        if potential_parts.iter().any(|(min, max)| min > max) {
-            break;
-        }
-    }
+    });
 
     Some(product)
 }
 
-fn parse_part(part: &str) -> Part {
-    let (x, m, a, s) = part[1..part.len() - 1]
-        .split_once(',')
-        .map(|(x, rest)| {
-            let (m, rest) = rest.split_once(',').unwrap();
-            let (a, s) = rest.split_once(',').unwrap();
-            (x, m, a, s)
-        })
-        .unwrap();
-
-    Part {
-        x: x[2..x.len()].parse().unwrap(),
-        m: m[2..m.len()].parse().unwrap(),
-        a: a[2..a.len()].parse().unwrap(),
-        s: s[2..s.len()].parse().unwrap(),
-    }
-}
-
 pub fn part_one(input: &str) -> Option<u32> {
-    let binding = input.replace("\r\n", "\n");
-    let (workflows, parts) = binding.split_once("\n\n").unwrap();
-
+    let (workflows, parts) = input.split_once("\n\n").unwrap();
     let workflows: HashMap<_, _> = workflows.lines().map(parse_workflow).collect();
-    let parts: Vec<Part> = parts.lines().map(parse_part).collect();
 
     let sum_ratings = parts
-        .iter()
+        .lines()
+        .map(parse_part)
         .filter_map(|part| {
-            if is_accepted(&workflows, part) {
+            if is_accepted(&workflows, &part) {
                 Some(part.x + part.m + part.a + part.s)
             } else {
                 None
@@ -201,13 +189,15 @@ pub fn part_one(input: &str) -> Option<u32> {
 }
 
 pub fn part_two(input: &str) -> Option<u64> {
-    let binding = input.replace("\r\n", "\n");
-    let (workflows, _) = binding.split_once("\n\n").unwrap();
+    let (workflows, _) = input.split_once("\n\n").unwrap();
 
-    let workflows: HashMap<_, _> = workflows.lines().map(parse_workflow).collect();
     let mut potential_parts = vec![(1, 4000), (1, 4000), (1, 4000), (1, 4000)];
 
-    process(&workflows, &mut potential_parts, "in")
+    process(
+        &workflows.lines().map(parse_workflow).collect(),
+        &mut potential_parts,
+        "in",
+    )
 }
 
 #[cfg(test)]
