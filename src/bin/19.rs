@@ -7,9 +7,15 @@ advent_of_code::solution!(19);
 
 #[derive(Debug, PartialEq)]
 struct Condition {
-    lhs: String,
+    lhs: char,
     operator: char,
     rhs: u32,
+}
+
+impl Condition {
+    fn new(lhs: char, operator: char, rhs: u32) -> Self {
+        Self { lhs, operator, rhs }
+    }
 }
 
 #[derive(Debug)]
@@ -19,8 +25,11 @@ struct Rule {
 }
 
 impl Rule {
-    fn new(condition: Option<Condition>, target: String) -> Self {
-        Self { condition, target }
+    fn new(condition: Option<Condition>, target: &str) -> Self {
+        Self {
+            condition,
+            target: target.to_string(),
+        }
     }
 }
 
@@ -34,30 +43,21 @@ struct Part {
 
 fn parse_rule(rule: &str) -> Rule {
     let (condition, target) = rule.split_once(':').unwrap_or(("", rule));
-    let condition = if condition.contains('<') || condition.contains('>') {
-        let (lhs, rhs) = condition
-            .split_once('<')
-            .unwrap_or_else(|| condition.split_once('>').unwrap());
-        let operator = if condition.contains('<') { '<' } else { '>' };
-        let rhs = rhs.parse().unwrap();
-        Some(Condition {
-            lhs: lhs.to_string(),
-            operator,
-            rhs,
-        })
-    } else {
-        None
+    let condition = match condition {
+        s if !s.is_empty() => Some(Condition::new(
+            s.chars().next().unwrap(),
+            s.chars().nth(1).unwrap(),
+            s[2..].parse().unwrap(),
+        )),
+        _ => None,
     };
-    Rule::new(condition, target.to_string())
+    Rule::new(condition, target)
 }
 
 fn parse_workflow(workflow: &str) -> (String, Vec<Rule>) {
     let (label, rules) = workflow.split_once('{').unwrap();
     let label = label.to_string();
-    let rules = rules
-        .split_once('}')
-        .unwrap()
-        .0
+    let rules = rules[..rules.len() - 1]
         .split(',')
         .map(parse_rule)
         .collect::<Vec<_>>();
@@ -70,18 +70,16 @@ fn is_accepted(workflows: &HashMap<String, Vec<Rule>>, part: &Part) -> bool {
 
     loop {
         if let Some(condition) = &rule.condition {
-            let lhs = match condition.lhs.as_str() {
-                "x" => part.x,
-                "m" => part.m,
-                "a" => part.a,
-                "s" => part.s,
+            let lhs = match condition.lhs {
+                'x' => part.x,
+                'm' => part.m,
+                'a' => part.a,
+                's' => part.s,
                 _ => unreachable!(),
             };
-            let rhs = condition.rhs;
-            let operator = condition.operator;
-            if !(match operator {
-                '<' => lhs < rhs,
-                '>' => lhs > rhs,
+            if !(match condition.operator {
+                '<' => lhs < condition.rhs,
+                '>' => lhs > condition.rhs,
                 _ => unreachable!(),
             }) {
                 rule = rules.next().unwrap();
@@ -89,7 +87,7 @@ fn is_accepted(workflows: &HashMap<String, Vec<Rule>>, part: &Part) -> bool {
             }
         }
 
-        match rule.target.as_str() {
+        match &rule.target[..] {
             "A" => return true,
             "R" => return false,
             _ => {
@@ -103,33 +101,21 @@ fn is_accepted(workflows: &HashMap<String, Vec<Rule>>, part: &Part) -> bool {
 
 fn process(
     workflows: &HashMap<String, Vec<Rule>>,
-    potential_parts: &mut Vec<(u32, u32)>,
+    potential_parts: &mut [(u32, u32)],
     target_workflow: &str,
 ) -> Option<u64> {
     let mut product = 0;
     let workflow = workflows.get(target_workflow).unwrap();
 
-    // potential parts is a vector of tuples of (min, max) for each part element
-    // we need to iterate over each rule in the workflow, and for each rule, we need to
-    // trim the potential parts to the new range
-
-    // if a target is A we need to multiply the diff between the min and max of the
-    // potential part elements and the accumulated product and return it
-
-    // if a target is R we need to return None
-
-    // if the target is a workflow, we need to recurse and multiply the product by the result if it exists
-
     for rule in workflow.iter() {
-        let mut partition_1 = potential_parts.clone();
-        let mut partition_2 = potential_parts.clone();
+        let mut partition_1 = potential_parts.to_owned();
 
         if let Some(condition) = &rule.condition {
-            let lhs = match condition.lhs.as_str() {
-                "x" => 0,
-                "m" => 1,
-                "a" => 2,
-                "s" => 3,
+            let lhs = match condition.lhs {
+                'x' => 0,
+                'm' => 1,
+                'a' => 2,
+                's' => 3,
                 _ => unreachable!(),
             };
             let rhs = condition.rhs;
@@ -137,11 +123,11 @@ fn process(
             match operator {
                 '<' => {
                     partition_1[lhs].1 = min(partition_1[lhs].1, rhs - 1);
-                    partition_2[lhs].0 = max(partition_2[lhs].0, rhs);
+                    potential_parts[lhs].0 = max(potential_parts[lhs].0, rhs);
                 }
                 '>' => {
                     partition_1[lhs].0 = max(partition_1[lhs].0, rhs + 1);
-                    partition_2[lhs].1 = min(partition_2[lhs].1, rhs);
+                    potential_parts[lhs].1 = min(potential_parts[lhs].1, rhs);
                 }
                 _ => unreachable!(),
             };
@@ -167,11 +153,9 @@ fn process(
             }
         }
 
-        if partition_2.iter().any(|(min, max)| min > max) {
+        if potential_parts.iter().any(|(min, max)| min > max) {
             break;
         }
-
-        *potential_parts = partition_2;
     }
 
     Some(product)
@@ -243,7 +227,7 @@ mod tests {
         assert_eq!(
             rule.condition,
             Some(Condition {
-                lhs: "a".to_string(),
+                lhs: 'a',
                 operator: '>',
                 rhs: 1716,
             })
@@ -254,7 +238,7 @@ mod tests {
         assert_eq!(
             rule.condition,
             Some(Condition {
-                lhs: "s".to_string(),
+                lhs: 's',
                 operator: '<',
                 rhs: 537,
             })
@@ -273,7 +257,7 @@ mod tests {
         assert_eq!(
             rule.condition,
             Some(Condition {
-                lhs: "a".to_string(),
+                lhs: 'a',
                 operator: '<',
                 rhs: 2006,
             })
@@ -284,7 +268,7 @@ mod tests {
         assert_eq!(
             rule.condition,
             Some(Condition {
-                lhs: "m".to_string(),
+                lhs: 'm',
                 operator: '>',
                 rhs: 2090,
             })
