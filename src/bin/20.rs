@@ -9,6 +9,7 @@ advent_of_code::solution!(20);
 enum PulseType {
     High,
     Low,
+    None,
 }
 
 struct Pulse<'a> {
@@ -55,7 +56,7 @@ impl<'a> CommsModule<'a> {
     }
 
     fn signal(&mut self, pulse_queue: &mut VecDeque<Pulse<'a>>, pulse: &Pulse<'a>) {
-        match self {
+        let (destinations, source, new_pulse) = match self {
             Self::FlipFlop {
                 on_off,
                 destinations,
@@ -67,17 +68,13 @@ impl<'a> CommsModule<'a> {
 
                 *on_off = !*on_off;
 
-                if *on_off {
-                    for destination in destinations.iter() {
-                        //println!("{} -high-> {}", id, destination);
-                        pulse_queue.push_back(Pulse::new(PulseType::High, id, destination));
-                    }
+                let new_pulse = if *on_off {
+                    PulseType::High
                 } else {
-                    for destination in destinations.iter() {
-                        //println!("{} -low-> {}", id, destination);
-                        pulse_queue.push_back(Pulse::new(PulseType::Low, id, destination));
-                    }
-                }
+                    PulseType::Low
+                };
+
+                (destinations, id, new_pulse.clone())
             }
             Self::Conjunction {
                 inputs,
@@ -86,20 +83,21 @@ impl<'a> CommsModule<'a> {
             } => {
                 inputs.insert(pulse.source, pulse.pulse_type.clone());
 
-                if inputs.iter().all(|(_, pulse)| *pulse == PulseType::High) {
-                    for destination in destinations {
-                        pulse_queue.push_back(Pulse::new(PulseType::Low, id, destination));
-                    }
+                let new_pulse = if inputs.iter().all(|(_, pulse)| *pulse == PulseType::High) {
+                    PulseType::Low
                 } else {
-                    for destination in destinations {
-                        pulse_queue.push_back(Pulse::new(PulseType::High, id, destination));
-                    }
-                }
+                    PulseType::High
+                };
+
+                (destinations, id, new_pulse.clone())
             }
-            Self::Broadcaster { destinations, id } => {
-                for destination in destinations {
-                    pulse_queue.push_back(Pulse::new(pulse.pulse_type.clone(), id, destination));
-                }
+            Self::Broadcaster { destinations, id } => (destinations, id, pulse.pulse_type.clone()),
+        };
+
+        if new_pulse != PulseType::None {
+            for destination in destinations.iter() {
+                //println!("{} -high-> {}", id, destination);
+                pulse_queue.push_back(Pulse::new(new_pulse.clone(), source, destination));
             }
         }
     }
@@ -110,14 +108,8 @@ fn parse_module(line: &str) -> (&str, CommsModule) {
         .unwrap()
         .captures(line)
         .map(|captures| {
-            let id = captures.get(2).map(|m| m.as_str()).unwrap();
-            let destinations = captures
-                .get(3)
-                .map(|m| m.as_str())
-                .unwrap()
-                .split(", ")
-                .map(|s| s)
-                .collect();
+            let id = captures.get(2).unwrap().as_str();
+            let destinations = captures.get(3).unwrap().as_str().split(", ").collect();
             let module = match captures.get(1).map(|m| m.as_str()) {
                 Some("%") => CommsModule::FlipFlop {
                     on_off: false,
@@ -240,21 +232,25 @@ pub fn part_one(input: &str) -> Option<usize> {
 pub fn part_two(input: &str) -> Option<usize> {
     let modules = parse_input(input);
 
-    let tmp = ["cl", "rp", "lb", "nj"]
-        .into_par_iter()
-        .map(|id| {
-            let mut counter: usize = 1;
-            let mut modules = modules.clone();
+    let presses = [
+        ("cl", &mut modules.clone()),
+        ("rp", &mut modules.clone()),
+        ("lb", &mut modules.clone()),
+        ("nj", &mut modules.clone()),
+    ]
+    .into_par_iter()
+    .map(|(id, modules)| {
+        let mut counter: usize = 1;
 
-            while !press_button2(&mut modules, id) {
-                counter += 1;
-            }
+        while !press_button2(modules, id) {
+            counter += 1;
+        }
 
-            counter
-        })
-        .collect::<Vec<usize>>();
+        counter
+    })
+    .reduce(|| 1, lcm);
 
-    tmp.into_iter().reduce(lcm)
+    Some(presses)
 }
 
 #[cfg(test)]
