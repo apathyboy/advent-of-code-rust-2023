@@ -22,7 +22,6 @@ fn find_reachable_points(map: HashMap<Point2D, char>, max_steps: usize) -> usize
         .find_map(|(pos, &c)| if c == 'S' { Some(pos) } else { None })
         .unwrap();
 
-    let mut visited = vec![*start];
     let mut queue = vec![*start];
     let mut next_queue = vec![];
 
@@ -32,43 +31,31 @@ fn find_reachable_points(map: HashMap<Point2D, char>, max_steps: usize) -> usize
         while let Some(pos) = queue.pop() {
             let mut next = pos;
             next.x += 1;
-            if map.contains_key(&next) && map[&next] != '#' && !next_queue.contains(&next)
-            /* && !visited.contains(&next) */
-            {
+            if map.contains_key(&next) && map[&next] != '#' && !next_queue.contains(&next) {
                 next_queue.push(next);
-                visited.push(next);
             }
 
             let mut next = pos;
             next.x -= 1;
-            if map.contains_key(&next) && map[&next] != '#' && !next_queue.contains(&next)
-            /* && !visited.contains(&next) */
-            {
+            if map.contains_key(&next) && map[&next] != '#' && !next_queue.contains(&next) {
                 next_queue.push(next);
-                visited.push(next);
             }
 
             let mut next = pos;
             next.y += 1;
-            if map.contains_key(&next) && map[&next] != '#' && !next_queue.contains(&next)
-            /* && !visited.contains(&next) */
-            {
+            if map.contains_key(&next) && map[&next] != '#' && !next_queue.contains(&next) {
                 next_queue.push(next);
-                visited.push(next);
             }
 
             let mut next = pos;
             next.y -= 1;
-            if map.contains_key(&next) && map[&next] != '#' && !next_queue.contains(&next)
-            /* && !visited.contains(&next) */
-            {
+            if map.contains_key(&next) && map[&next] != '#' && !next_queue.contains(&next) {
                 next_queue.push(next);
-                visited.push(next);
             }
         }
 
-        queue = next_queue;
-        next_queue = vec![];
+        (queue, next_queue) = (next_queue, queue);
+        next_queue.clear();
 
         steps += 1;
     }
