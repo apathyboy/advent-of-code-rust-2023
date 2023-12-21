@@ -1,7 +1,4 @@
-mod day;
 pub mod template;
-
-pub use day::*;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Point2D {
