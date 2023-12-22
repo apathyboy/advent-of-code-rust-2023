@@ -1,5 +1,9 @@
 use advent_of_code::Point2D;
-use std::collections::{HashMap, HashSet};
+use rayon::prelude::*;
+use std::{
+    collections::{HashMap, HashSet},
+    mem::swap,
+};
 
 advent_of_code::solution!(21);
 
@@ -47,7 +51,7 @@ fn find_reachable_points(map: &HashMap<Point2D, char>, max_steps: usize) -> usiz
         }
 
         queue.clear();
-        (queue, next_queue) = (next_queue, queue);
+        swap(&mut queue, &mut next_queue);
 
         steps += 1;
     }
@@ -64,15 +68,16 @@ pub fn part_one(input: &str) -> Option<usize> {
 pub fn part_two(input: &str) -> Option<usize> {
     let map = parse_map(input);
 
-    let y_0 = find_reachable_points(&map, 65);
-    let y_1 = find_reachable_points(&map, 65 + 131);
-    let y_2 = find_reachable_points(&map, 65 + 131 * 2);
+    let res = [65, 65 + 131, 65 + 131 * 2]
+        .into_par_iter()
+        .map(|n| find_reachable_points(&map, n))
+        .collect::<Vec<_>>();
 
     let n = 202300;
 
-    let a2 = y_2 - 2 * y_1 + y_0;
-    let b2 = 4 * y_1 - 3 * y_0 - y_2;
-    let c = y_0;
+    let a2 = res[2] - 2 * res[1] + res[0];
+    let b2 = 4 * res[1] - 3 * res[0] - res[2];
+    let c = res[0];
 
     Some((n * n * a2 + n * b2) / 2 + c)
 }
