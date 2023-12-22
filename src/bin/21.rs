@@ -60,8 +60,6 @@ fn find_reachable_points(map: HashMap<Point2D, char>, max_steps: usize) -> usize
         steps += 1;
     }
 
-    dbg!(queue.iter().unique().count());
-
     queue.iter().unique().count()
 }
 
