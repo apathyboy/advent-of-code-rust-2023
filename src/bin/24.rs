@@ -147,9 +147,11 @@ pub fn part_two(input: &str) -> Option<usize> {
 
     let result = m.try_inverse().expect("Matrix inversion failed") * rhs;
 
-    let sum = result.iter().map(|&x| x.ceil() as usize).take(3).sum();
-
-    Some(sum)
+    result
+        .iter()
+        .map(|&x| Some(x.ceil() as usize))
+        .take(3)
+        .sum()
     //None Some(sum)
 }
 
