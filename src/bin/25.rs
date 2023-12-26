@@ -7,9 +7,7 @@ advent_of_code::solution!(25);
 
 fn parse_graph(input: &str) -> UnGraph<&str, u32> {
     let mut graph = UnGraph::new_undirected();
-
     let mut nodes = HashMap::new();
-    let mut edges = HashMap::new();
 
     for line in input.lines() {
         let (node_str, connections) = line.split_once(": ").unwrap();
@@ -20,22 +18,11 @@ fn parse_graph(input: &str) -> UnGraph<&str, u32> {
         }
 
         for &connection_str in &connections {
-            let key = if node_str < connection_str {
-                [node_str, connection_str]
-            } else {
-                [connection_str, node_str]
-            };
-
             if !nodes.contains_key(connection_str) {
                 nodes.insert(connection_str, graph.add_node(connection_str));
             }
 
-            if !edges.contains_key(&key) {
-                edges.insert(
-                    key,
-                    graph.add_edge(nodes[node_str], nodes[connection_str], 1),
-                );
-            }
+            graph.add_edge(nodes[node_str], nodes[connection_str], 1);
         }
     }
 
