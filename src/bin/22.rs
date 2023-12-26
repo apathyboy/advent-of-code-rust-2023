@@ -86,6 +86,7 @@ fn try_settle(bricks: &[Vec<Point3D>]) -> (Vec<Vec<Point3D>>, u32) {
 
             if settled_bricks
                 .iter()
+                .filter(|b| b[0].z == test_position[0].z)
                 .any(|b| do_segments_intersect(b, &test_position))
             {
                 break;
