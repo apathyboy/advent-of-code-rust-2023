@@ -32,8 +32,8 @@ fn parse_graph(input: &str) -> UnGraph<&str, u32> {
 pub fn part_one(input: &str) -> Option<usize> {
     let graph = parse_graph(input);
 
-    let min: Result<Option<(usize, Vec<_>)>> = stoer_wagner_min_cut(&graph, |_| Ok(1));
-    let (_, partition) = min.unwrap().unwrap();
+    let min_cut: Result<Option<(usize, Vec<_>)>> = stoer_wagner_min_cut(&graph, |_| Ok(1));
+    let (_, partition) = min_cut.unwrap().unwrap();
 
     Some(partition.len() * (graph.node_count() - partition.len()))
 }
