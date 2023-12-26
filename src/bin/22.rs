@@ -104,7 +104,7 @@ fn try_settle(bricks: &[Brick]) -> (Vec<Brick>, u32) {
 
         if settled_bricks.is_empty() && new_position.start.z != 1 {
             new_position.start.z = 1;
-            new_position.end.z = 1;
+            new_position.end.z = 1 + (brick.end.z - brick.start.z);
             settled_bricks.push(new_position);
             counter += 1;
             continue;
@@ -149,29 +149,27 @@ pub fn part_one(input: &str) -> Option<u32> {
 
     let (settled_bricks, _) = try_settle(&bricks);
 
-    let mut disintegratable = Vec::new();
+    let mut disintegratable = 0;
 
     for i in 0..settled_bricks.len() {
         let mut test_bricks = Vec::new();
 
-        let to_remove = settled_bricks[i].clone();
-
-        for settled_brick in settled_bricks.iter() {
-            if settled_brick == &to_remove {
+        for j in 0..settled_bricks.len() {
+            if i == j {
                 continue;
             }
 
-            test_bricks.push(settled_brick.clone());
+            test_bricks.push(settled_bricks[j].clone());
         }
 
         let (_, counter) = try_settle(&test_bricks);
 
         if counter == 0 {
-            disintegratable.push(to_remove);
+            disintegratable += 1;
         }
     }
 
-    Some(disintegratable.len() as u32)
+    Some(disintegratable)
 }
 
 pub fn part_two(input: &str) -> Option<u32> {
@@ -184,14 +182,12 @@ pub fn part_two(input: &str) -> Option<u32> {
     for i in 0..settled_bricks.len() {
         let mut test_bricks = Vec::new();
 
-        let to_remove = settled_bricks[i].clone();
-
-        for settled_brick in settled_bricks.iter() {
-            if settled_brick == &to_remove {
+        for j in 0..settled_bricks.len() {
+            if i == j {
                 continue;
             }
 
-            test_bricks.push(settled_brick.clone());
+            test_bricks.push(settled_bricks[j].clone());
         }
 
         let (_, counter) = try_settle(&test_bricks);
