@@ -1,23 +1,41 @@
-use std::collections::{HashMap, HashSet, VecDeque};
+use rustworkx_core::connectivity::stoer_wagner_min_cut;
+use rustworkx_core::petgraph::graph::UnGraph;
+use rustworkx_core::Result;
+use std::collections::HashMap;
 
 advent_of_code::solution!(25);
 
-fn parse(input: &str) -> HashMap<&str, HashSet<&str>> {
-    let mut graph = HashMap::new();
+fn parse_graph(input: &str) -> UnGraph<&str, u32> {
+    let mut graph = UnGraph::new_undirected();
+
+    let mut nodes = HashMap::new();
+    let mut edges = HashMap::new();
 
     for line in input.lines() {
-        let (node, connections) = line.split_once(": ").unwrap();
-        let connections: HashSet<_> = connections.split(' ').collect();
+        let (node_str, connections) = line.split_once(": ").unwrap();
+        let connections: Vec<_> = connections.split(' ').collect();
 
-        let parent = graph.entry(node).or_insert(HashSet::new());
-
-        for &connection in &connections {
-            parent.insert(connection);
+        if !nodes.contains_key(node_str) {
+            nodes.insert(node_str, graph.add_node(node_str));
         }
 
-        for &connection in &connections {
-            let child = graph.entry(connection).or_default();
-            child.insert(node);
+        for &connection_str in &connections {
+            let key = if node_str < connection_str {
+                [node_str, connection_str]
+            } else {
+                [connection_str, node_str]
+            };
+
+            if !nodes.contains_key(connection_str) {
+                nodes.insert(connection_str, graph.add_node(connection_str));
+            }
+
+            if !edges.contains_key(&key) {
+                edges.insert(
+                    key,
+                    graph.add_edge(nodes[node_str], nodes[connection_str], 1),
+                );
+            }
         }
     }
 
@@ -25,60 +43,12 @@ fn parse(input: &str) -> HashMap<&str, HashSet<&str>> {
 }
 
 pub fn part_one(input: &str) -> Option<usize> {
-    let graph = parse(input);
+    let graph = parse_graph(input);
 
-    let mut freq = HashMap::new();
+    let min: Result<Option<(usize, Vec<_>)>> = stoer_wagner_min_cut(&graph, |_| Ok(1));
+    let (_, partition) = min.unwrap().unwrap();
 
-    for &start in graph.keys() {
-        let mut queue = VecDeque::from([start]);
-        let mut visited = HashSet::from([start]);
-
-        while let Some(node) = queue.pop_front() {
-            for &next in &graph[node] {
-                if visited.insert(next) {
-                    let key = if node < next {
-                        [node, next]
-                    } else {
-                        [next, node]
-                    };
-
-                    let entry = freq.entry(key).or_insert(0);
-                    *entry += 1;
-
-                    queue.push_back(next);
-                }
-            }
-        }
-    }
-
-    let mut order: Vec<_> = freq.iter().collect();
-    order.sort_unstable_by_key(|e| e.1);
-    order.reverse();
-
-    let cut: Vec<_> = order.iter().take(3).map(|p| *p.0).collect();
-    let start = *graph.keys().next().unwrap();
-
-    let mut todo = VecDeque::new();
-    todo.push_back(start);
-
-    let mut seen = HashSet::new();
-    seen.insert(start);
-
-    while let Some(pos) = todo.pop_front() {
-        for &next in &graph[pos] {
-            let key = if pos < next { [pos, next] } else { [next, pos] };
-
-            if cut.contains(&key) {
-                continue;
-            }
-
-            if seen.insert(next) {
-                todo.push_back(next);
-            }
-        }
-    }
-
-    Some(seen.len() * (graph.len() - seen.len()))
+    Some(partition.len() * (graph.node_count() - partition.len()))
 }
 
 pub fn part_two(_input: &str) -> Option<u32> {
