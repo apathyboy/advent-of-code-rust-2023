@@ -3,11 +3,48 @@ use itertools::Itertools;
 
 advent_of_code::solution!(22);
 
-fn do_segments_intersect(segment1: &[Point3D], segment2: &[Point3D]) -> bool {
-    let p1 = &segment1[0];
-    let q1 = &segment1[1];
-    let p2 = &segment2[0];
-    let q2 = &segment2[1];
+#[derive(Debug, Clone, PartialEq)]
+struct Brick {
+    start: Point3D,
+    end: Point3D,
+}
+
+impl Brick {
+    fn new(start: Point3D, end: Point3D) -> Self {
+        Self { start, end }
+    }
+}
+
+fn parse(input: &str) -> Vec<Brick> {
+    input
+        .lines()
+        .map(|line| {
+            let bounds: Vec<_> = line
+                .split('~')
+                .map(|part| {
+                    let parts = part
+                        .split(',')
+                        .map(|item| item.parse::<isize>().unwrap())
+                        .collect::<Vec<isize>>();
+
+                    Point3D::new(parts[0], parts[1], parts[2])
+                })
+                .collect();
+            if bounds[0].z > bounds[1].z {
+                Brick::new(bounds[1], bounds[0])
+            } else {
+                Brick::new(bounds[0], bounds[1])
+            }
+        })
+        .sorted_by(|a, b| a.start.z.cmp(&b.start.z))
+        .collect()
+}
+
+fn do_segments_intersect(segment1: &Brick, segment2: &Brick) -> bool {
+    let p1 = &segment1.start;
+    let q1 = &segment1.end;
+    let p2 = &segment2.start;
+    let q2 = &segment2.end;
 
     // Check if the segments are collinear and overlap on the x-axis or z-axis
     if p1.x == q1.x && p2.x == q2.x && p1.x == p2.x {
@@ -57,17 +94,17 @@ fn do_segments_intersect(segment1: &[Point3D], segment2: &[Point3D]) -> bool {
     false
 }
 
-fn try_settle(bricks: &[Vec<Point3D>]) -> (Vec<Vec<Point3D>>, u32) {
-    let mut settled_bricks: Vec<Vec<Point3D>> = Vec::new();
+fn try_settle(bricks: &[Brick]) -> (Vec<Brick>, u32) {
+    let mut settled_bricks: Vec<Brick> = Vec::new();
 
     let mut counter = 0;
 
     for brick in bricks.iter() {
         let mut new_position = brick.clone();
 
-        if settled_bricks.is_empty() && new_position[0].z != 1 {
-            new_position[0].z = 1;
-            new_position[1].z = 1;
+        if settled_bricks.is_empty() && new_position.start.z != 1 {
+            new_position.start.z = 1;
+            new_position.end.z = 1;
             settled_bricks.push(new_position);
             counter += 1;
             continue;
@@ -77,16 +114,16 @@ fn try_settle(bricks: &[Vec<Point3D>]) -> (Vec<Vec<Point3D>>, u32) {
 
         loop {
             let mut test_position = new_position.clone();
-            test_position[0].z -= 1;
-            test_position[1].z -= 1;
+            test_position.start.z -= 1;
+            test_position.end.z -= 1;
 
-            if test_position[0].z < 1 {
+            if test_position.start.z < 1 {
                 break;
             }
 
             if settled_bricks
                 .iter()
-                .filter(|b| b[0].z == test_position[0].z)
+                .filter(|b| b.start.z == test_position.start.z)
                 .any(|b| do_segments_intersect(b, &test_position))
             {
                 break;
@@ -108,22 +145,7 @@ fn try_settle(bricks: &[Vec<Point3D>]) -> (Vec<Vec<Point3D>>, u32) {
 }
 
 pub fn part_one(input: &str) -> Option<u32> {
-    let bricks: Vec<Vec<Point3D>> = input
-        .lines()
-        .map(|line| {
-            line.split('~')
-                .map(|part| {
-                    let parts = part
-                        .split(',')
-                        .map(|item| item.parse::<isize>().unwrap())
-                        .collect::<Vec<isize>>();
-
-                    Point3D::new(parts[0], parts[1], parts[2])
-                })
-                .collect()
-        })
-        .sorted_by(|a: &Vec<Point3D>, b| a[0].z.cmp(&b[0].z))
-        .collect();
+    let bricks = parse(input);
 
     let (settled_bricks, _) = try_settle(&bricks);
 
@@ -153,22 +175,7 @@ pub fn part_one(input: &str) -> Option<u32> {
 }
 
 pub fn part_two(input: &str) -> Option<u32> {
-    let bricks: Vec<Vec<Point3D>> = input
-        .lines()
-        .map(|line| {
-            line.split('~')
-                .map(|part| {
-                    let parts = part
-                        .split(',')
-                        .map(|item| item.parse::<isize>().unwrap())
-                        .collect::<Vec<isize>>();
-
-                    Point3D::new(parts[0], parts[1], parts[2])
-                })
-                .collect()
-        })
-        .sorted_by(|a: &Vec<Point3D>, b| a[0].z.cmp(&b[0].z))
-        .collect();
+    let bricks = parse(input);
 
     let (settled_bricks, _) = try_settle(&bricks);
 
