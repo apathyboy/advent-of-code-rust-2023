@@ -40,58 +40,12 @@ fn parse(input: &str) -> Vec<Brick> {
         .collect()
 }
 
-fn do_segments_intersect(segment1: &Brick, segment2: &Brick) -> bool {
-    let p1 = &segment1.start;
-    let q1 = &segment1.end;
-    let p2 = &segment2.start;
-    let q2 = &segment2.end;
-
-    // Check if the segments are collinear and overlap on the x-axis or z-axis
-    if p1.x == q1.x && p2.x == q2.x && p1.x == p2.x {
-        let y1_min = p1.y.min(q1.y);
-        let y1_max = p1.y.max(q1.y);
-        let y2_min = p2.y.min(q2.y);
-        let y2_max = p2.y.max(q2.y);
-
-        let z1_min = p1.z.min(q1.z);
-        let z1_max = p1.z.max(q1.z);
-        let z2_min = p2.z.min(q2.z);
-        let z2_max = p2.z.max(q2.z);
-
-        return (y1_min <= y2_max && y2_min <= y1_max) && (z1_min <= z2_max && z2_min <= z1_max);
-    }
-
-    // Check if the segments are collinear and overlap on the y-axis or z-axis
-    if p1.y == q1.y && p2.y == q2.y && p1.y == p2.y {
-        let x1_min = p1.x.min(q1.x);
-        let x1_max = p1.x.max(q1.x);
-        let x2_min = p2.x.min(q2.x);
-        let x2_max = p2.x.max(q2.x);
-
-        let z1_min = p1.z.min(q1.z);
-        let z1_max = p1.z.max(q1.z);
-        let z2_min = p2.z.min(q2.z);
-        let z2_max = p2.z.max(q2.z);
-
-        return (x1_min <= x2_max && x2_min <= x1_max) && (z1_min <= z2_max && z2_min <= z1_max);
-    }
-
-    // Check if the segments are collinear and overlap on the x-axis or y-axis
-    if p1.z == q1.z && p2.z == q2.z && p1.z == p2.z {
-        let x1_min = p1.x.min(q1.x);
-        let x1_max = p1.x.max(q1.x);
-        let x2_min = p2.x.min(q2.x);
-        let x2_max = p2.x.max(q2.x);
-
-        let y1_min = p1.y.min(q1.y);
-        let y1_max = p1.y.max(q1.y);
-        let y2_min = p2.y.min(q2.y);
-        let y2_max = p2.y.max(q2.y);
-
-        return (x1_min <= x2_max && x2_min <= x1_max) && (y1_min <= y2_max && y2_min <= y1_max);
-    }
-
-    false
+fn bricks_intersect(brick1: &Brick, brick2: &Brick) -> bool {
+    brick1.end.z == brick2.start.z
+        && brick1.start.x <= brick2.end.x
+        && brick2.start.x <= brick1.end.x
+        && brick1.start.y <= brick2.end.y
+        && brick2.start.y <= brick1.end.y
 }
 
 fn try_settle(bricks: &[Brick]) -> (Vec<Brick>, u32) {
@@ -124,7 +78,7 @@ fn try_settle(bricks: &[Brick]) -> (Vec<Brick>, u32) {
             if settled_bricks
                 .iter()
                 .filter(|b| b.start.z == test_position.start.z)
-                .any(|b| do_segments_intersect(b, &test_position))
+                .any(|b| bricks_intersect(b, &test_position))
             {
                 break;
             }
