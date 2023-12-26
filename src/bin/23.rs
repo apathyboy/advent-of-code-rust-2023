@@ -26,6 +26,7 @@ fn longest_path(
     let mut visited = vec![vec![false; maze[0].len()]; maze.len()];
     let mut longest_path = Vec::new();
     let mut current_path = Vec::new();
+    let mut longest_path_reached_counter = 0;
 
     dfs(
         maze,
@@ -34,6 +35,7 @@ fn longest_path(
         &mut visited,
         &mut current_path,
         &mut longest_path,
+        &mut longest_path_reached_counter,
     );
 
     longest_path
@@ -46,11 +48,13 @@ fn dfs(
     visited: &mut Vec<Vec<bool>>,
     current_path: &mut Vec<(usize, usize)>,
     longest_path: &mut Vec<(usize, usize)>,
+    longest_path_reached_counter: &mut u32,
 ) {
     if pos.0 >= maze[0].len()
         || pos.1 >= maze.len()
         || maze[pos.1][pos.0] == '#'
         || visited[pos.1][pos.0]
+        || *longest_path_reached_counter > 9
     {
         return;
     }
@@ -61,6 +65,8 @@ fn dfs(
     if pos == goal && current_path.len() > longest_path.len() {
         longest_path.clear();
         longest_path.extend(current_path.iter());
+
+        *longest_path_reached_counter += 1;
     }
 
     let check_directions = match maze[pos.1][pos.0] {
@@ -84,6 +90,7 @@ fn dfs(
                 visited,
                 current_path,
                 longest_path,
+                longest_path_reached_counter,
             );
         }
     }
