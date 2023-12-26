@@ -41,7 +41,7 @@ fn parse(input: &str) -> Vec<Brick> {
 }
 
 fn bricks_intersect(brick1: &Brick, brick2: &Brick) -> bool {
-    brick1.end.z == brick2.start.z
+    (brick1.end.z >= brick2.start.z && brick1.start.z <= brick2.start.z)
         && brick1.start.x <= brick2.end.x
         && brick2.start.x <= brick1.end.x
         && brick1.start.y <= brick2.end.y
