@@ -1,5 +1,6 @@
 use advent_of_code::Point3D;
 use itertools::Itertools;
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
 
 advent_of_code::solution!(22);
 
@@ -19,22 +20,22 @@ fn parse(input: &str) -> Vec<Brick> {
     input
         .lines()
         .map(|line| {
-            let bounds: Vec<_> = line
+            let [start, end] = line
                 .split('~')
                 .map(|part| {
-                    let parts = part
+                    let [x, y, z] = part
                         .split(',')
                         .map(|item| item.parse::<isize>().unwrap())
-                        .collect::<Vec<isize>>();
+                        .collect::<Vec<_>>()
+                        .try_into()
+                        .unwrap();
 
-                    Point3D::new(parts[0], parts[1], parts[2])
+                    Point3D::new(x, y, z)
                 })
-                .collect();
-            if bounds[0].z > bounds[1].z {
-                Brick::new(bounds[1], bounds[0])
-            } else {
-                Brick::new(bounds[0], bounds[1])
-            }
+                .collect::<Vec<_>>()
+                .try_into()
+                .unwrap();
+            Brick::new(start, end)
         })
         .sorted_by(|a, b| a.start.z.cmp(&b.start.z))
         .collect()
@@ -103,25 +104,28 @@ pub fn part_one(input: &str) -> Option<u32> {
 
     let (settled_bricks, _) = try_settle(&bricks);
 
-    let mut disintegratable = 0;
+    let disintegratable = (0..settled_bricks.len())
+        .into_par_iter()
+        .map(|i| {
+            let mut test_bricks = Vec::new();
 
-    for i in 0..settled_bricks.len() {
-        let mut test_bricks = Vec::new();
+            for (j, settled_brick) in settled_bricks.iter().enumerate() {
+                if i == j {
+                    continue;
+                }
 
-        for j in 0..settled_bricks.len() {
-            if i == j {
-                continue;
+                test_bricks.push(settled_brick.clone());
             }
 
-            test_bricks.push(settled_bricks[j].clone());
-        }
+            let (_, counter) = try_settle(&test_bricks);
 
-        let (_, counter) = try_settle(&test_bricks);
-
-        if counter == 0 {
-            disintegratable += 1;
-        }
-    }
+            if counter == 0 {
+                1_u32
+            } else {
+                0_u32
+            }
+        })
+        .sum();
 
     Some(disintegratable)
 }
@@ -131,23 +135,24 @@ pub fn part_two(input: &str) -> Option<u32> {
 
     let (settled_bricks, _) = try_settle(&bricks);
 
-    let mut total_counter = 0;
+    let total_counter = (0..settled_bricks.len())
+        .into_par_iter()
+        .map(|i| {
+            let mut test_bricks = Vec::new();
 
-    for i in 0..settled_bricks.len() {
-        let mut test_bricks = Vec::new();
+            for (j, settled_brick) in settled_bricks.iter().enumerate() {
+                if i == j {
+                    continue;
+                }
 
-        for j in 0..settled_bricks.len() {
-            if i == j {
-                continue;
+                test_bricks.push(settled_brick.clone());
             }
 
-            test_bricks.push(settled_bricks[j].clone());
-        }
+            let (_, counter) = try_settle(&test_bricks);
 
-        let (_, counter) = try_settle(&test_bricks);
-
-        total_counter += counter;
-    }
+            counter
+        })
+        .sum();
 
     Some(total_counter)
 }
