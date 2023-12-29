@@ -1,3 +1,5 @@
+use rayon::iter::{IndexedParallelIterator, IntoParallelIterator, ParallelIterator};
+
 advent_of_code::solution!(10);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -217,7 +219,7 @@ pub fn part_two(input: &str) -> Option<u32> {
         find_start_tile_type(pipe_loop[0], pipe_loop[1], pipe_loop[pipe_loop.len() - 1]);
 
     let map: Vec<Vec<Tile>> = map
-        .into_iter()
+        .into_par_iter()
         .enumerate()
         .map(|(y, line)| {
             line.into_iter()
